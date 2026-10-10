@@ -1,0 +1,8 @@
+# Example: BACKUP.manifest.yml
+repo: my-project
+remote: git@github.com:you/my-project.git
+branch: main
+cadence: daily
+verify: push
+owner: you@example.com
+last_verified: 2026-10-10T08:00:00Z
