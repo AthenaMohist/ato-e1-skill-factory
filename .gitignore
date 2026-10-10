@@ -1,0 +1,6 @@
+*.enc
+*.key
+.env
+*token*
+*secret*
+notes-private/
