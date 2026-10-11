@@ -5,8 +5,8 @@
 ## Install
 
 ```bash
-npx skills add https://github.com/AthenaMohist/git-backup-discipline
-# or copy the folder into .claude/skills/ / ~/.codex/skills/
+npx skills add AthenaMohist/ato-e1-skill-factory
+# (installs the git-backup-discipline skill; or copy the folder into .claude/skills/ / ~/.codex/skills/)
 ```
 
 ## Quick start

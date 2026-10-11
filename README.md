@@ -6,7 +6,9 @@ Production-grade agent skills packaged as portable SKILL.md files (agentskills.i
 
 | Skill | Description | Status |
 |-------|-------------|--------|
-| (first skill landing soon) | | WIP |
+| [git-backup-discipline](skills/git-backup-discipline/) | Fail-closed backup discipline: backup manifest + verified push + gap audit. Never trust "committed" — prove "backed up." | v1.0.0 |
+
+Install: `npx skills add AthenaMohist/ato-e1-skill-factory`
 
 ## Repository layout
 
