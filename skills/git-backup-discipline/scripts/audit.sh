@@ -8,6 +8,18 @@ OUT="$ROOT/BACKUP.gaps"
 : > "$OUT"
 NOW=$(date +%s)
 GAPS=0
+# portable ISO8601 -> epoch (GNU date -d / BSD date -j -f / python3 fallback)
+iso_to_epoch() {
+  if date -u -d "$1" +%s >/dev/null 2>&1; then
+    date -u -d "$1" +%s
+  elif date -j -u -f "%Y-%m-%dT%H:%M:%S" "${1%%.*}" +%s >/dev/null 2>&1; then
+    date -j -u -f "%Y-%m-%dT%H:%M:%S" "${1%%.*}" +%s
+  elif command -v python3 >/dev/null 2>&1; then
+    python3 -c "import datetime,sys;print(int(datetime.datetime.fromisoformat(sys.argv[1].replace('Z','+00:00')).timestamp()))" "$1" 2>/dev/null || echo 0
+  else
+    echo 0
+  fi
+}
 while IFS= read -r -d '' repo; do
   if [ ! -f "$repo/BACKUP.manifest.yml" ]; then
     echo "NO-MANIFEST $repo" >> "$OUT"; GAPS=$((GAPS+1)); continue
@@ -20,11 +32,12 @@ while IFS= read -r -d '' repo; do
   elif [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
     echo "UNPUSHED $repo (head=${HEAD_SHA:0:7} remote=${REMOTE_SHA:0:7})" >> "$OUT"; GAPS=$((GAPS+1))
   fi
-  LV=$(grep -oP '(?<=^last_verified: ).*' "$repo/BACKUP.manifest.yml" 2>/dev/null || echo never)
+  LV=$(sed -n 's/^last_verified:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
+  LV=${LV:-never}
   if [ "$LV" = "never" ]; then
     echo "NEVER-VERIFIED $repo" >> "$OUT"; GAPS=$((GAPS+1))
   else
-    LV_EPOCH=$(date -d "$LV" +%s 2>/dev/null || echo 0)
+    LV_EPOCH=$(iso_to_epoch "$LV")
     if [ $((NOW - LV_EPOCH)) -gt $((7*86400)) ]; then
       echo "STALE-VERIFIED $repo (last=$LV)" >> "$OUT"; GAPS=$((GAPS+1))
     fi
