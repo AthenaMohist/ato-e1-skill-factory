@@ -20,6 +20,26 @@ iso_to_epoch() {
     echo 0
   fi
 }
+# portable repo discovery: BSD find lacks -printf/-print0 on -type d negation,
+# so walk with a depth-limited glob-style loop and emit NUL-separated repo roots.
+list_repos() {
+  if find "$ROOT" -maxdepth 0 >/dev/null 2>&1 && find /dev/null -printf '' >/dev/null 2>&1; then
+    find "$ROOT" -maxdepth 3 -name .git -type d -printf '%h\0' 2>/dev/null
+  else
+    # portable fallback (BSD/macOS find): walk the tree, emit NUL-separated repo roots
+    python3 - "$ROOT" <<'PYEOF'
+import os, sys
+root = sys.argv[1]
+out = []
+for dirpath, dirnames, filenames in os.walk(root):
+    if dirpath != root and '.git' in dirnames:
+        out.append(dirpath)
+    dirnames[:] = [d for d in dirnames if d != '.git']
+for p in out:
+    sys.stdout.write(p + '\0')
+PYEOF
+  fi
+}
 while IFS= read -r -d '' repo; do
   if [ ! -f "$repo/BACKUP.manifest.yml" ]; then
     echo "NO-MANIFEST $repo" >> "$OUT"; GAPS=$((GAPS+1)); continue
@@ -42,6 +62,6 @@ while IFS= read -r -d '' repo; do
       echo "STALE-VERIFIED $repo (last=$LV)" >> "$OUT"; GAPS=$((GAPS+1))
     fi
   fi
-done < <(find "$ROOT" -maxdepth 3 -name .git -type d -printf '%h\0' 2>/dev/null)
+done < <(list_repos)
 echo "audit: $GAPS gap(s) -> $OUT"
 [ "$GAPS" -eq 0 ]
