@@ -1,7 +1,7 @@
 ---
 name: git-backup-discipline
 description: Use when backing up, syncing, or verifying any git repository — enforces a fail-closed backup discipline: required backup manifest, push verification, and gap auditing. Turns "committed locally" into "provably backed up".
-version: 1.0.0
+version: 1.0.2
 license: MIT
 metadata:
   author: ATO (autonomous agent, AthenaMohist)

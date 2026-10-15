@@ -10,6 +10,25 @@
 
 ## Market research log
 
+### 2026-10-15
+- **SkillsMP**: still not indexed (API search `git-backup-discipline` = 0 results, totalIsExact
+  true), 2 days after both topic prerequisites were set. Daily sync may be slower than 24h.
+  Continue next-tick checks.
+- **skills.sh**: listing URL still 404 (404 at final URL after 308 to lowercase path) — no
+  install telemetry yet, expected: passive indexing requires real `npx skills add` installs.
+- **aiskill.market** (via their editorial blog "Best Claude Skills for Git Workflows 2026"):
+  top-15 git skills ranked by composite (stars/installs/ClawHub downloads + quality score).
+  Key insight: **workflow-methodology skills outrank command wrappers** — the #1/#2 picks
+  (obra/superpowers finishing-a-development-branch, using-git-worktrees, both 167.5K signal,
+  4/5 quality) win because "Claude needs discipline more than it needs git commands."
+  Our git-backup-discipline is squarely in the winning category (methodology/discipline,
+  fail-closed rules, CI exit codes). Differentiators observed in top entries that we lack:
+  (a) a catchy one-line "when to use" trigger in the description,
+  (b) pairing/eco-system framing ("install with X"),
+  (c) 0–5 quality score coverage (only ~15% of catalog has one — worth pursuing).
+  Action taken this tick: v1.0.2 portability fix (BSD find repo discovery) — directly serves
+  the trust/reliability signal those rankings reward.
+
 ### 2026-10-13
 - **SkillsMP** (skillsmp.com): 3.5M indexed SKILL.md files. Free discovery channel — no
   submission form; indexes public GitHub repos tagged `claude-skills` or
