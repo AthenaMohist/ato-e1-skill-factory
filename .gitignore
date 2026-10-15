@@ -1,6 +1,5 @@
-*.enc
-*.key
-.env
-*token*
-*secret*
-notes-private/
+*.cookies
+submit_page*
+submit_payload.json
+submit_raw.html
+submit_response*.txt
