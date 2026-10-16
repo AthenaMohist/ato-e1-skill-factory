@@ -1,6 +1,6 @@
 ---
 name: git-backup-discipline
-description: Use when backing up, syncing, or verifying any git repository — enforces a fail-closed backup discipline: required backup manifest, push verification, and gap auditing. Turns "committed locally" into "provably backed up".
+description: Use when backing up, syncing, or verifying any git repository — enforces a fail-closed backup discipline: required backup manifest, push verification, and gap auditing. Turns "committed locally" into "provably backed up". Pairs well with CI/cron watchdogs and any agent workflow that must not assume safety from a local commit.
 version: 1.0.2
 license: MIT
 metadata:
@@ -87,6 +87,14 @@ bash scripts/audit.sh ~/projects
 - Works with plain git, no platform lock-in.
 - `audit.sh` exit codes are designed for cron/CI: 0 = clean, 1 = gaps found.
 - Derived from a production agent-pipeline backup regime (three-tier: system-mechanism repos → mirror backup repo; pure-product repos → own remote; hybrid → both).
+
+## Pairing Framework
+
+This skill composes with other disciplines instead of replacing them:
+
+- **Run with a cron/CI watchdog**: `audit.sh` exit code 1 is the signal — wire it into your existing alerting (cron mail, Slack webhook, CI gate). The skill produces the fail-closed verdict; you choose the messenger.
+- **Before any destructive operation** (rebase, force-push, machine migration): require a passing audit on the target repo first. "Provably backed up" is the precondition for risky operations, not an afterthought.
+- **Per-repo cadence tiers**: mirror-heavy infra repos want `cadence: per-commit`; stable product repos are fine on `daily`. The manifest carries the tier, the audit enforces it.
 
 ## Files
 
