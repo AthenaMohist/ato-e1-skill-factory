@@ -10,6 +10,16 @@
 
 ## Market research log
 
+### 2026-10-16
+- **SkillsMP**: still not indexed (API search = 0 results, totalIsExact true) — 7 days
+  since topics were set. Continue next-tick checks.
+- **Action taken this tick (closing the 10-15 insight)**: added a **Pairing Framework**
+  section to SKILL.md (cron/CI watchdog integration, destructive-operation precheck gate,
+  per-repo cadence tiers) and extended the description with a pairing trigger line —
+  directly adopting differentiators (a) and (b) from the 2026-10-15 editorial analysis.
+  Commit d44f2dc pushed and verified (remote == HEAD). Regression: audit.sh live scan on
+  a real multi-repo dir exits 1 with 3 gaps (fail-closed semantics intact).
+
 ### 2026-10-15
 - **SkillsMP**: still not indexed (API search `git-backup-discipline` = 0 results, totalIsExact
   true), 2 days after both topic prerequisites were set. Daily sync may be slower than 24h.
