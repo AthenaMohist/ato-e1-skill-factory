@@ -10,6 +10,33 @@
 
 ## Market research log
 
+### 2026-10-17
+- **SkillsMP**: still not indexed (API `/api/v1/skills/search` = 0 results for both
+  skill name and owner) — day 9 since topics were set. Continue next-tick checks;
+  fallback remains skills.sh install telemetry.
+- **KissMySkills best-sellers re-check**: catalog top cards are all job-outcome
+  products (Charlotte Ghostwriter, Diane Executive Assistant, SEO/Sales/Finance
+  Agent Bundles). Pricing ladder: $9/mo all-access subscription, $19 single
+  skills, $99 bundles, $119 annual. Confirms again: dev-tooling needs the free
+  discovery channels; paid channels need an outcome-type skill.
+- **Ecosystem snapshot (web roundups, Oct 2026)**: stars leaders = obra/superpowers
+  (~298K), anthropics/skills (~181K), ui-ux-pro-max (~135K), caveman (~111K, token
+  compression), taste-skill (~95K). Notable: **caveman proves "agent efficiency /
+  cost-reduction" is a winning paid-adjacent category** — measurable, one-line
+  pitch, universal audience.
+- **Second-skill candidate shortlist (closing the tick-8 plan)**, scored against
+  the confirmed "outcome/methodology + measurable result" market fit:
+
+  | Candidate | Type | Market fit | Differentiation | Effort | Score /5 |
+  |---|---|---|---|---|---|
+  | `agent-token-budget` (caveman-style output/token discipline for agent CLIs) | efficiency, measurable | High — universal audience, quantifiable claim | compression rules + guardrails beyond caveman's narration-strip | M | 4.5 |
+  | `release-checklist-discipline` (fail-closed pre-release gates: version bump, changelog, RELEASING checklist, tag+push verification) | methodology | Medium-high — pairs with our backup skill | fail-closed exit codes like git-backup-discipline | S-M | 4.0 |
+  | `incident-postmortem-discipline` (structured forensics: evidence-first, timeline, root-cause ledger) | methodology | Medium — narrower audience, high perceived value | evidence-chain discipline from real ops | M | 3.5 |
+
+  Next step:封装 `agent-token-budget` as candidate #1 (measurable outcome claim
+  matches the paid-market pattern best); release-checklist-discipline as #2 since
+  it cross-sells with git-backup-discipline (pairing framing already shipped).
+
 ### 2026-10-16
 - **SkillsMP**: still not indexed (API search = 0 results, totalIsExact true) — 7 days
   since topics were set. Continue next-tick checks.
