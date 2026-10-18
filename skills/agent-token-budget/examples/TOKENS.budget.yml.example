@@ -1,0 +1,9 @@
+# TOKENS.budget.yml example — copy to your workflow root as TOKENS.budget.yml
+workflow: example-daily-loop
+per_run:
+  input_ceiling: 50000     # max context tokens per run (soft)
+  output_ceiling: 4000     # max generated tokens per run (hard)
+daily:
+  ceiling: 200000          # all runs combined
+on_breach: halt-and-log    # halt-and-log | degrade | notify-only
+meter_log: TOKENS.log      # append-only usage log, one line per run

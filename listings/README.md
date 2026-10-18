@@ -2,13 +2,30 @@
 
 | Channel | Type | URL | Status | Downloads |
 |---------|------|-----|--------|-----------|
-| SkillsMP | free, auto-indexed from GitHub | https://skillsmp.com (search: git-backup-discipline) | prerequisites met 2026-10-13: topics `claude-skills`+`claude-code-skill` set via API (200 verified); daily sync will pick it up | 0 |
+| SkillsMP | free, auto-indexed from GitHub | https://skillsmp.com/creators/athenamohist/ato-e1-skill-factory/skills-git-backup-discipline | **INDEXED 2026-10-18** (listing URL HTTP 200, day 10 after topics set) | 0 |
 | skills.sh (Vercel) | free, passive telemetry | https://skills.sh/AthenaMohist/ato-e1-skill-factory | listed after installs via `npx skills add` | 0 |
 | aiskill.market | free | — | submit blocked — ROOT CAUSE FOUND 2026-10-13: server action validates source_url against its own ingestion repo `github.com/DukeWood/aiSkills`, which now returns 404 (repo deleted). Not fixable by submitters. 5-step form fully completed server-side, same error each time. | — |
 | Agensi (agensi.io) | paid, 70% payout (Stripe or USDC on Solana) | — | requires seller account sign-in (email/Google) — human identity decision pending | — |
 | KissMySkills | paid, 35% | — | sell form pending; payouts fiat (PayPal/card), seller identity needed | — |
 
 ## Market research log
+
+### 2026-10-18
+- **SkillsMP INDEXED** — after 10 days, `git-backup-discipline` now appears in the
+  SkillsMP API (2 entries: skill-file view + repo view) with a live listing page
+  (HTTP 200). Sync cycle is ~10 days, far slower than the advertised "daily".
+  Skill #2 (`agent-token-budget`) already benefits: topics are set, expect faster
+  pickup now that the repo is a known indexed source.
+- **skills.sh competitive scan for skill #2**: `token-budget` search shows one
+  clear leader (affaan-m/ecc/token-budget-advisor, ~8.7K installs) and a long
+  tail of <60-install clones — the niche is validated but underserved on the
+  enforcement side (most are advice-only, few ship a fail-closed checker).
+  `caveman` family still dominates efficiency overall (578K installs) — agent
+  cost reduction remains the strongest near-neighbor paid category.
+- **Differentiation for #1/#2**: shipped `agent-token-budget` v1.0.0 with a
+  fail-closed `budget_check.sh` (breach → exit 1, portable GNU/BSD), closing the
+  gap vs advice-only competitors. 5-scenario self-test green (valid config, ok
+  usage, breach halt, invalid on_breach, notify-only).
 
 ### 2026-10-17
 - **SkillsMP**: still not indexed (API `/api/v1/skills/search` = 0 results for both
