@@ -1,0 +1,19 @@
+# RELEASE.checklist.yml — example contract (copy to your repo root, edit, commit)
+project: my-public-repo
+scan:
+  deny_patterns:                          # regex, zero matches allowed in tracked files
+    - '(ghp|github_pat)_[A-Za-z0-9]{20,}' # GitHub tokens
+    - 'BEGIN (RSA|OPENSSH) PRIVATE KEY'   # private keys
+    - 'sk-[A-Za-z0-9]{20,}'               # generic API keys
+    - '/(root|home)/[a-z]+'               # absolute user paths from the dev machine
+  deny_globs:                             # shell glob, no tracked file may match
+    - '.env*'
+    - '*.pem'
+    - '*token*'
+  deny_terms:                             # fixed strings, case-insensitive
+    - internal-codename
+allow:                                    # explicit, human-reviewed exceptions
+  - 'docs/example-token'
+require:                                  # files that must be tracked
+  - README.md
+  - LICENSE
