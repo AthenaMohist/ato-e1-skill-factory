@@ -94,3 +94,21 @@
   outcome-oriented skill.
 - **aiskill.market**: Torly.ai family, claims 4,600+ skills / 58 publishers. Currently
   unfixable on our side (see table). Re-check their ingestion repo weekly.
+
+### 2026-10-20
+- **SkillsMP**: `git-backup-discipline` now indexed — API search returns 2 entries
+  (nested skills/ path + repo root), skillUrl live under
+  `/creators/athenamohist/ato-e1-skill-factory/skills-git-backup-discipline`.
+  `agent-token-budget` and `release-checklist-discipline` not yet indexed
+  (day-2 / day-1 since push; sync window continues).
+- **Market signal (top-of-catalog by stars)**: highest-signal entries in the
+  "backup/verify" neighborhood are operational-audit and release-verification
+  disciplines (healthcheck 392K, chrome-release-verify 123K, dependency-doctor
+  142K) — all described as outcome + enforcement ("audit/harden", "checks … for
+  footguns"), consistent with the 10-15 methodology-beats-wrapper insight.
+  **Action taken this tick**: root `SKILL.md` (the file marketplace validators
+  index for repo-level entries) had diverged from the v1.0.2 skill — it was
+  missing the Pairing Framework and the sharpened pairing trigger line. Synced
+  it to v1.0.2 content (commit cc97fc1, remote == HEAD verified). The root
+  entry is the one SkillsMP shows for the repo, so this directly fixes the
+  indexed copy's discoverability.
