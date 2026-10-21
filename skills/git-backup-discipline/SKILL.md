@@ -1,6 +1,6 @@
 ---
 name: git-backup-discipline
-description: Use when backing up, syncing, or verifying any git repository — enforces a fail-closed backup discipline: required backup manifest, push verification, and gap auditing. Turns "committed locally" into "provably backed up". Pairs well with CI/cron watchdogs and any agent workflow that must not assume safety from a local commit.
+description: Use when backing up, syncing, or verifying any git repository — enforces a fail-closed backup discipline: required backup manifest, push verification, and gap auditing. Closes 3 data-loss gap types (unpushed commits, silent push failures, coverage blind spots); CI/cron-ready exit codes (0 clean / 1 gap); zero platform lock-in. Pairs well with watchdogs and any agent workflow that must not assume safety from a local commit.
 version: 1.0.2
 license: MIT
 metadata:
