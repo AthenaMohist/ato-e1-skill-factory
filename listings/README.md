@@ -112,3 +112,18 @@
   it to v1.0.2 content (commit cc97fc1, remote == HEAD verified). The root
   entry is the one SkillsMP shows for the repo, so this directly fixes the
   indexed copy's discoverability.
+
+### 2026-10-21
+- **SkillsMP re-crawl check**: both `git-backup-discipline` entries (nested + repo
+  root) still serve the pre-pairing snapshot (root `updatedAt` ≈ 10-13; listing
+  frontmatter/body lack the pairing trigger line and Pairing Framework section).
+  Expected — re-crawl cadence appears to be ~1 week per entry. Re-check next tick.
+  `agent-token-budget` (day-3) and `release-checklist-discipline` (day-2) still
+  not indexed.
+- **Listing improvement (quantified-outcome description)**: sharpened the
+  `git-backup-discipline` description with measurable results — "closes 3
+  data-loss gap types …; CI/cron-ready exit codes (0 clean / 1 gap); zero
+  platform lock-in" — following the pattern of top-enforcement listings
+  (healthcheck / dependency-doctor / chrome-release-verify). Applied to both the
+  root and nested SKILL.md (kept identical). commit `4eeb3a9` pushed,
+  HEAD == origin/main verified.
