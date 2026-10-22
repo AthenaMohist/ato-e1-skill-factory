@@ -127,3 +127,17 @@
   (healthcheck / dependency-doctor / chrome-release-verify). Applied to both the
   root and nested SKILL.md (kept identical). commit `4eeb3a9` pushed,
   HEAD == origin/main verified.
+
+### 2026-10-22
+- **SkillsMP re-crawl check**: root entry still serves the 10-13 snapshot
+  (no quantified-outcome sentence, no Pairing Framework); nested entry
+  unchanged since 10-11. `agent-token-budget` (day-4) and
+  `release-checklist-discipline` (day-3) still not indexed. Re-check next tick.
+- **Real gap fix (self-audit)**: found that a corrupted/unparseable
+  `last_verified` timestamp (e.g. `last_verified: "not-a-date"`) made
+  `audit.sh`'s ISO->epoch fallback return 0 and fall through both checks —
+  the repo silently produced no STALE-VERIFIED gap, i.e. a fail-closed
+  coverage hole. Now emits a dedicated `UNPARSEABLE-VERIFIED` gap type
+  (4 gap types total). Fixture regression: fresh/stale/unparseable + /root
+  projects scan all behave correctly. commit `a9d75c0` pushed,
+  HEAD == origin/main verified.
