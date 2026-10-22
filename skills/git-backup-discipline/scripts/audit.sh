@@ -58,7 +58,9 @@ while IFS= read -r -d '' repo; do
     echo "NEVER-VERIFIED $repo" >> "$OUT"; GAPS=$((GAPS+1))
   else
     LV_EPOCH=$(iso_to_epoch "$LV")
-    if [ $((NOW - LV_EPOCH)) -gt $((7*86400)) ]; then
+    if [ "$LV_EPOCH" -le 0 ]; then
+      echo "UNPARSEABLE-VERIFIED $repo (last=$LV)" >> "$OUT"; GAPS=$((GAPS+1))
+    elif [ $((NOW - LV_EPOCH)) -gt $((7*86400)) ]; then
       echo "STALE-VERIFIED $repo (last=$LV)" >> "$OUT"; GAPS=$((GAPS+1))
     fi
   fi
