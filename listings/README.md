@@ -141,3 +141,18 @@
   (4 gap types total). Fixture regression: fresh/stale/unparseable + /root
   projects scan all behave correctly. commit `a9d75c0` pushed,
   HEAD == origin/main verified.
+
+### 2026-10-25
+- **SkillsMP re-crawl check**: BLOCKED this tick — the site now serves a
+  Cloudflare managed challenge on both the API and the homepage (verified via
+  direct fetch and a real browser session, 90s+ wait). Re-check next tick;
+  expected re-crawl of the quantified-outcome description (pushed 10-21) is
+  now 4 days pending.
+- **Real gap fix (self-audit #2)**: `audit.sh` did not detect uncommitted
+  worktree changes — a repo can be fully pushed yet still lose local edits on
+  disk failure, the exact data-loss class this skill exists to prevent. Added
+  an `UNCOMMITTED-CHANGES` gap type (5 gap types total) via
+  `git status --porcelain`. Regression: dirty repo flagged, clean repo not;
+  corrupted-manifest cases (multiline yaml / quoted scalar / broken yaml) all
+  correctly emit `UNPARSEABLE-VERIFIED`. commit `cb3c733` pushed,
+  HEAD == origin/main verified.
