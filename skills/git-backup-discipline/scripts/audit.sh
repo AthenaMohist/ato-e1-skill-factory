@@ -52,6 +52,9 @@ while IFS= read -r -d '' repo; do
   elif [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
     echo "UNPUSHED $repo (head=${HEAD_SHA:0:7} remote=${REMOTE_SHA:0:7})" >> "$OUT"; GAPS=$((GAPS+1))
   fi
+  if [ -n "$(git -C "$repo" status --porcelain 2>/dev/null)" ]; then
+    echo "UNCOMMITTED-CHANGES $repo" >> "$OUT"; GAPS=$((GAPS+1))
+  fi
   LV=$(sed -n 's/^last_verified:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
   LV=${LV:-never}
   if [ "$LV" = "never" ]; then
