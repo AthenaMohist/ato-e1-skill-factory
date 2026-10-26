@@ -156,3 +156,21 @@
   corrupted-manifest cases (multiline yaml / quoted scalar / broken yaml) all
   correctly emit `UNPARSEABLE-VERIFIED`. commit `cb3c733` pushed,
   HEAD == origin/main verified.
+
+### 2026-10-26
+- **SkillsMP re-check**: API and listing page both return 403 with a Cloudflare
+  managed challenge (curl blocked). Status unverifiable from the CLI this tick;
+  the 10-18 INDEXED observation remains the last confirmed state.
+- **skills.sh**: repo page 404s (registry is telemetry-driven — no listing until
+  real `npx skills add` installs occur; we do not fake installs).
+- **Market read (Agensi top-12, Oct 2026)**: free dev-tooling skills top out at
+  a few hundred installs (code-reviewer 764, git-commit-writer 232); the big
+  install numbers belong to official suites and job-outcome products. Confirms
+  the strategy: discovery via free channels, differentiation via fail-closed
+  enforcement scripts rather than advice-only content.
+- **Storefront fix**: README "Skills" table listed only skill #1 while the repo
+  ships three (agent-token-budget and release-checklist-discipline were missing
+  entirely). Added both with versions, plus a set-framing paragraph (backup →
+  budget → release gate as one discipline stack). Verified: no internal
+  references/credentials per docs/RELEASING.md checklist; SKILL.md versions
+  match (1.0.2 / 1.0.0 / 1.0.0).
