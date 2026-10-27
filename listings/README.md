@@ -173,4 +173,15 @@
   entirely). Added both with versions, plus a set-framing paragraph (backup →
   budget → release gate as one discipline stack). Verified: no internal
   references/credentials per docs/RELEASING.md checklist; SKILL.md versions
-  match (1.0.2 / 1.0.0 / 1.0.0).
+  match (1.0.3 / 1.0.0 / 1.0.0).
+
+## 2026-10-27 (tick 18)
+
+- **SkillsMP API unblocked**: homepage still behind Cloudflare managed
+  challenge (403), but the search API returns 200 again. git-backup-discipline
+  root entry updatedAt ≈ 10-25 — the 10-21 quantified-description resync
+  finally landed (was pending 4 days). #2 indexed day-9 snapshot, #3 day-10.
+- **Gap fix (front-matter accuracy)**: all git-backup-discipline descriptions
+  still said "Closes 3 data-loss gap types" while audit.sh has shipped 5 gap
+  types since 10-25 (UNPARSEABLE-VERIFIED, UNCOMMITTED-CHANGES). Updated both
+  SKILL.md files, bumped v1.0.2 → v1.0.3, synced nested README changelog.

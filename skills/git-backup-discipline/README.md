@@ -29,7 +29,7 @@ bash scripts/audit.sh ~/projects                    # fail-closed coverage audit
 
 ## Status
 
-v1.0.2 — production-derived from an agent pipeline that has run daily verified backups since 2026-08.
+v1.0.3 — production-derived from an agent pipeline that has run daily verified backups since 2026-08.
 macOS/BSD compatible (portable date parsing + repo discovery; falls back to python3 when GNU tools are absent).
 
 MIT licensed. Bug reports and PRs welcome.
