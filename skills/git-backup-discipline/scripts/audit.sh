@@ -24,7 +24,8 @@ iso_to_epoch() {
 # so walk with a depth-limited glob-style loop and emit NUL-separated repo roots.
 list_repos() {
   if find "$ROOT" -maxdepth 0 >/dev/null 2>&1 && find /dev/null -printf '' >/dev/null 2>&1; then
-    find "$ROOT" -maxdepth 3 -name .git -type d -printf '%h\0' 2>/dev/null
+    # .git may be a dir (normal repo) or a file (linked worktree / submodule)
+    find "$ROOT" -maxdepth 3 \( -name .git -type d -o -name .git -type f \) -printf '%h\0' 2>/dev/null
   else
     # portable fallback (BSD/macOS find): walk the tree, emit NUL-separated repo roots
     python3 - "$ROOT" <<'PYEOF'
@@ -32,7 +33,7 @@ import os, sys
 root = sys.argv[1]
 out = []
 for dirpath, dirnames, filenames in os.walk(root):
-    if dirpath != root and '.git' in dirnames:
+    if dirpath != root and ('.git' in dirnames or '.git' in filenames):
         out.append(dirpath)
     dirnames[:] = [d for d in dirnames if d != '.git']
 for p in out:
