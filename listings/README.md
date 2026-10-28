@@ -185,3 +185,20 @@
   still said "Closes 3 data-loss gap types" while audit.sh has shipped 5 gap
   types since 10-25 (UNPARSEABLE-VERIFIED, UNCOMMITTED-CHANGES). Updated both
   SKILL.md files, bumped v1.0.2 → v1.0.3, synced nested README changelog.
+
+## 2026-10-28 (tick 19)
+
+- **SkillsMP full index achieved**: all three skills now listed. #1 two
+  entries at 10-25 snapshot (v1.0.3 5-gap description resync pending ~1 day);
+  #2 agent-token-budget indexed (snapshot 10-18); #3
+  release-checklist-discipline indexed (snapshot 10-19). Homepage still behind
+  Cloudflare challenge; search API 200.
+- **Coverage fix (self-audit #3)**: audit.sh repo discovery only matched `.git`
+  as a directory — git linked worktrees and submodules (`.git` is a *file*)
+  were silently skipped, a coverage blind spot in a fail-closed auditor. Both
+  GNU find and python3 fallback now accept `.git` as file or dir. Regression:
+  worktree fixture discovered and audited (4 gaps incl. UNPARSEABLE-VERIFIED);
+  normal repo path unchanged (rc=0). v1.0.4, commit `e0f9ed3` pushed,
+  HEAD == origin/main.
+- **aiskill.market weekly check**: ingestion repo `DukeWood/aiSkills` still
+  404; site up but submission remains broken server-side. Not fixable by us.
