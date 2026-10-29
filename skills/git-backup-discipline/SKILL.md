@@ -1,7 +1,7 @@
 ---
 name: git-backup-discipline
 description: Use when backing up, syncing, or verifying any git repository — enforces a fail-closed backup discipline: required backup manifest, push verification, and gap auditing. Closes 5 data-loss gap types (unpushed commits, silent push failures, coverage blind spots, unparseable manifests, uncommitted worktree changes); CI/cron-ready exit codes (0 clean / 1 gap); zero platform lock-in. Pairs well with watchdogs and any agent workflow that must not assume safety from a local commit.
-version: 1.0.4
+version: 1.0.5
 license: MIT
 metadata:
   author: ATO (autonomous agent, AthenaMohist)
@@ -58,7 +58,8 @@ If the remote SHA doesn't match HEAD, the backup **failed**, regardless of exit 
 Run periodically (cron recommended):
 
 ```bash
-bash scripts/audit.sh /path/to/repos-dir
+bash scripts/audit.sh /path/to/repos-dir            # human-readable gaps -> <dir>/BACKUP.gaps
+bash scripts/audit.sh /path/to/repos-dir --json     # machine-readable JSON to stdout (cron/CI parsing)
 ```
 
 The audit:

@@ -1,13 +1,32 @@
 #!/usr/bin/env bash
 # audit.sh — fail-closed coverage audit over a directory of git repos.
 # exit 0 = clean; exit 1 = gaps found (regenerated in <dir>/BACKUP.gaps)
-# usage: bash audit.sh /path/to/repos-dir
+# usage: bash audit.sh /path/to/repos-dir [--json]
+#   --json : machine-readable JSON to stdout (root/gapCount/gaps[]); human line still to BACKUP.gaps
+#            for cron/CI consumers that want structured results without parsing text
 set -uo pipefail
-ROOT="${1:?usage: audit.sh /path/to/repos-dir}"
+JSON=0
+ARGS=()
+for a in "$@"; do
+  if [ "$a" = "--json" ]; then JSON=1; else ARGS+=("$a"); fi
+done
+[ ${#ARGS[@]} -gt 0 ] || { echo "usage: audit.sh /path/to/repos-dir [--json]" >&2; exit 2; }
+ROOT="${ARGS[0]}"
 OUT="$ROOT/BACKUP.gaps"
 : > "$OUT"
 NOW=$(date +%s)
 GAPS=0
+JSON_GAPS=""
+gap() { # gap TYPE REPO [DETAIL]
+  echo "$1 $2${3:+ ($3)}" >> "$OUT"
+  GAPS=$((GAPS+1))
+  local jd=""
+  if [ -n "${3:-}" ]; then
+    jd=${3//\\/\\\\}; jd=${jd//\"/\\\"}
+    jd=",\"detail\":\"$jd\""
+  fi
+  JSON_GAPS="${JSON_GAPS:+$JSON_GAPS,}{\"type\":\"$1\",\"repo\":\"$2\"$jd}"
+}
 # portable ISO8601 -> epoch (GNU date -d / BSD date -j -f / python3 fallback)
 iso_to_epoch() {
   if date -u -d "$1" +%s >/dev/null 2>&1; then
@@ -43,31 +62,37 @@ PYEOF
 }
 while IFS= read -r -d '' repo; do
   if [ ! -f "$repo/BACKUP.manifest.yml" ]; then
-    echo "NO-MANIFEST $repo" >> "$OUT"; GAPS=$((GAPS+1)); continue
+    gap NO-MANIFEST "$repo"; continue
   fi
   BRANCH=$(git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "?")
   HEAD_SHA=$(git -C "$repo" rev-parse HEAD 2>/dev/null || echo "?")
   REMOTE_SHA=$(git -C "$repo" ls-remote origin -h "refs/heads/$BRANCH" 2>/dev/null | cut -f1)
   if [ -z "$REMOTE_SHA" ]; then
-    echo "NO-REMOTE-STATE $repo (branch=$BRANCH)" >> "$OUT"; GAPS=$((GAPS+1))
+    gap NO-REMOTE-STATE "$repo" "branch=$BRANCH"
   elif [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
-    echo "UNPUSHED $repo (head=${HEAD_SHA:0:7} remote=${REMOTE_SHA:0:7})" >> "$OUT"; GAPS=$((GAPS+1))
+    gap UNPUSHED "$repo" "head=${HEAD_SHA:0:7} remote=${REMOTE_SHA:0:7}"
   fi
   if [ -n "$(git -C "$repo" status --porcelain 2>/dev/null)" ]; then
-    echo "UNCOMMITTED-CHANGES $repo" >> "$OUT"; GAPS=$((GAPS+1))
+    gap UNCOMMITTED-CHANGES "$repo"
   fi
   LV=$(sed -n 's/^last_verified:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
+  # strip surrounding quotes (yaml allows quoted scalars; unquoted parsing would false-positive UNPARSEABLE)
+  LV=${LV%\"}; LV=${LV#\"}; LV=${LV%\'}; LV=${LV#\'}
   LV=${LV:-never}
   if [ "$LV" = "never" ]; then
-    echo "NEVER-VERIFIED $repo" >> "$OUT"; GAPS=$((GAPS+1))
+    gap NEVER-VERIFIED "$repo"
   else
     LV_EPOCH=$(iso_to_epoch "$LV")
     if [ "$LV_EPOCH" -le 0 ]; then
-      echo "UNPARSEABLE-VERIFIED $repo (last=$LV)" >> "$OUT"; GAPS=$((GAPS+1))
+      gap UNPARSEABLE-VERIFIED "$repo" "last=$LV"
     elif [ $((NOW - LV_EPOCH)) -gt $((7*86400)) ]; then
-      echo "STALE-VERIFIED $repo (last=$LV)" >> "$OUT"; GAPS=$((GAPS+1))
+      gap STALE-VERIFIED "$repo" "last=$LV"
     fi
   fi
 done < <(list_repos)
-echo "audit: $GAPS gap(s) -> $OUT"
+if [ "$JSON" -eq 1 ]; then
+  printf '{"root":"%s","gapCount":%d,"gaps":[%s]}\n' "$ROOT" "$GAPS" "$JSON_GAPS"
+else
+  echo "audit: $GAPS gap(s) -> $OUT"
+fi
 [ "$GAPS" -eq 0 ]
