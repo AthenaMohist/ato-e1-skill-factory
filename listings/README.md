@@ -202,3 +202,27 @@
   HEAD == origin/main.
 - **aiskill.market weekly check**: ingestion repo `DukeWood/aiSkills` still
   404; site up but submission remains broken server-side. Not fixable by us.
+
+## 2026-10-29 (tick 20)
+
+- **SkillsMP resync check**: #1 two entries still at 10-25 snapshot — v1.0.4
+  coverage fix not re-fetched yet (pending 4 days; historical resync cadence
+  ~4-11 days). #2 (10-18) / #3 (10-19) snapshots unchanged. API 200, homepage
+  still Cloudflare-challenged.
+- **skills.sh top-list scan (www, 922 KB DOM)**: board is dominated by
+  org/edu dev-education skills (mattpocock 30+ entries, vercel-labs,
+  anthropics, prisma, supabase, shadcn, prime-skills/RunComfy media suite).
+  Zero backup/verify/postmortem/checklist skills on the front board —
+  confirms methodology/discipline skills win via install telemetry long tail,
+  not the front page. Market direction unchanged: free-discovery first,
+  second outcome-type paid skill still the open item.
+- **Integration gap fix (self-audit #4)**: SKILL.md advertises "CI/cron-ready
+  exit codes" but audit.sh only emitted human-readable text — consumers had
+  to parse prose to know *which* gaps fired. Added `--json` flag: structured
+  `{"root", "gapCount", "gaps":[{type, repo, detail}]}` to stdout. Regression
+  caught two real bugs live: (a) quoted YAML scalars
+  (`last_verified: "2026-..."`) false-flagged UNPARSEABLE-VERIFIED (fixed by
+  quote-stripping); (b) JSON detail containing quotes produced invalid JSON
+  (fixed with escaping). Fixtures: fresh/stale/unparseable/dirty/no-remote
+  all correct; valid JSON verified by parser. v1.0.5, commit `bcb7e1d`
+  pushed, HEAD == origin/main.
