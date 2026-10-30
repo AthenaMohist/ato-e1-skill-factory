@@ -226,3 +226,4 @@
   (fixed with escaping). Fixtures: fresh/stale/unparseable/dirty/no-remote
   all correct; valid JSON verified by parser. v1.0.5, commit `bcb7e1d`
   pushed, HEAD == origin/main.
+- 2026-10-30 tick21: SkillsMP 复查: #1 两条条目 updatedAt=10-25 (v1.0.4 重抓 pending 5 天, 历史节奏 4-11 天); #2 (10-18)/#3 (10-19) 不变; API 200。门面漂移复发: repo 根 SKILL.md 停 v1.0.3 缺 --json 文档, 已同步 v1.0.5 (commit 3836895 push, HEAD==origin/main 实锤)——教训: 根文件与嵌套 SKILL.md 无同步门禁, 每 tick diff 检查。
