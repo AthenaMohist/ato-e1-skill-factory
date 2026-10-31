@@ -29,8 +29,9 @@ bash scripts/audit.sh ~/projects                    # fail-closed coverage audit
 
 ## Status
 
-v1.0.5 — production-derived from an agent pipeline that has run daily verified backups since 2026-08.
+v1.0.6 — production-derived from an agent pipeline that has run daily verified backups since 2026-08.
 
+v1.0.6: optional `BACKUP.audit-ignore` at the audit ROOT to exclude non-backup-target repos from NO-MANIFEST noise (relative paths, `#` comments).
 v1.0.5: `audit.sh --json` machine-readable output for cron/CI consumers; fix quoted `last_verified` scalars false-flagging UNPARSEABLE-VERIFIED; JSON detail escaping.
 
 v1.0.4: audit now discovers git worktrees and submodules too (`.git` as a *file*), not just normal repos.

@@ -1,7 +1,7 @@
 ---
 name: git-backup-discipline
 description: Use when backing up, syncing, or verifying any git repository — enforces a fail-closed backup discipline: required backup manifest, push verification, and gap auditing. Closes 5 data-loss gap types (unpushed commits, silent push failures, coverage blind spots, unparseable manifests, uncommitted worktree changes); CI/cron-ready exit codes (0 clean / 1 gap); zero platform lock-in. Pairs well with watchdogs and any agent workflow that must not assume safety from a local commit.
-version: 1.0.5
+version: 1.0.6
 license: MIT
 metadata:
   author: ATO (autonomous agent, AthenaMohist)
@@ -41,6 +41,7 @@ Plus two derived files this skill maintains:
 
 - `BACKUP.log` — append-only log of every backup attempt (success AND failure), one line each.
 - `BACKUP.gaps` — regenerated on every audit run; empty file means full coverage.
+- `BACKUP.audit-ignore` (optional, at the audit ROOT) — one repo path per line (relative to ROOT, `#` comments allowed); those repos are excluded from the audit. Use it for tool/product repos sharing a directory with your backup targets so they don't produce permanent NO-MANIFEST noise.
 
 ## The Push Verification Rule (铁律)
 

@@ -41,6 +41,23 @@ iso_to_epoch() {
 }
 # portable repo discovery: BSD find lacks -printf/-print0 on -type d negation,
 # so walk with a depth-limited glob-style loop and emit NUL-separated repo roots.
+# ROOT/BACKUP.audit-ignore (one path per line, relative to ROOT, '#' comments ok)
+# excludes repos that are not backup targets (e.g. tool/product repos living in
+# the same directory) — intended repos are always skipped, fail-closed semantics
+# unchanged for everything else.
+IGNORE_FILE="$ROOT/BACKUP.audit-ignore"
+ignore_check() { # returns 0 if $1 (absolute repo path) should be skipped
+  [ -f "$IGNORE_FILE" ] || return 1
+  local rel="${1#"$ROOT"/}"
+  local line
+  while IFS= read -r line; do
+    line=${line%%\#*}; line=${line#"${line%%[![:space:]]*}"}; line=${line%"${line##*[![:space:]]}"}
+    [ -n "$line" ] || continue
+    [ "$rel" = "$line" ] && return 0
+    [ "$rel" = "$line/" ] && return 0
+  done < "$IGNORE_FILE"
+  return 1
+}
 list_repos() {
   if find "$ROOT" -maxdepth 0 >/dev/null 2>&1 && find /dev/null -printf '' >/dev/null 2>&1; then
     # .git may be a dir (normal repo) or a file (linked worktree / submodule)
@@ -61,6 +78,7 @@ PYEOF
   fi
 }
 while IFS= read -r -d '' repo; do
+  if ignore_check "$repo"; then continue; fi
   if [ ! -f "$repo/BACKUP.manifest.yml" ]; then
     gap NO-MANIFEST "$repo"; continue
   fi
