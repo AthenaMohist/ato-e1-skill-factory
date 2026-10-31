@@ -227,3 +227,4 @@
   all correct; valid JSON verified by parser. v1.0.5, commit `bcb7e1d`
   pushed, HEAD == origin/main.
 - 2026-10-30 tick21: SkillsMP 复查: #1 两条条目 updatedAt=10-25 (v1.0.4 重抓 pending 5 天, 历史节奏 4-11 天); #2 (10-18)/#3 (10-19) 不变; API 200。门面漂移复发: repo 根 SKILL.md 停 v1.0.3 缺 --json 文档, 已同步 v1.0.5 (commit 3836895 push, HEAD==origin/main 实锤)——教训: 根文件与嵌套 SKILL.md 无同步门禁, 每 tick diff 检查。
+- 2026-10-31 tick22: SkillsMP 复查: #1 两条条目 updatedAt=10-25 (v1.0.4/v1.0.5 重抓 pending 6 天, 历史节奏 4-11 天窗口内); #2 (10-18)/#3 (10-19) 不变; API 200。G 点改进 (消费者噪声): audit.sh 对同目录下非备份目标 repo 永远报 NO-MANIFEST (产品 repo 自身每次中招) — 新增 ROOT 级可选 `BACKUP.audit-ignore` (相对路径/支持 # 注释), 被列 repo 跳过, 其余 fail-closed 语义不变; 回归: 无 ignore 文件双报/带注释+空行噪声行正确解析/部分前缀不误匹配/JSON 模式尊重 ignore, 全绿。v1.0.6, commit `f2bdddf` push, HEAD==origin/main 实锤。
