@@ -90,6 +90,15 @@ while IFS= read -r -d '' repo; do
   elif [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
     gap UNPUSHED "$repo" "head=${HEAD_SHA:0:7} remote=${REMOTE_SHA:0:7}"
   fi
+  # manifest declares the intended backup destination; if the actual origin has
+  # drifted (repo moved, remote replaced), the manifest is now a false record —
+  # audit the declared remote, not just the current one.
+  M_REMOTE=$(sed -n 's/^remote:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
+  M_REMOTE=${M_REMOTE%\"}; M_REMOTE=${M_REMOTE#\"}; M_REMOTE=${M_REMOTE%\'}; M_REMOTE=${M_REMOTE#\'}
+  A_REMOTE=$(git -C "$repo" remote get-url origin 2>/dev/null || echo "")
+  if [ -n "$M_REMOTE" ] && [ -n "$A_REMOTE" ] && [ "$M_REMOTE" != "$A_REMOTE" ]; then
+    gap REMOTE-MISMATCH "$repo" "manifest=$M_REMOTE actual=$A_REMOTE"
+  fi
   if [ -n "$(git -C "$repo" status --porcelain 2>/dev/null)" ]; then
     gap UNCOMMITTED-CHANGES "$repo"
   fi

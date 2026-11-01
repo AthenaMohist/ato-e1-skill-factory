@@ -31,6 +31,7 @@ bash scripts/audit.sh ~/projects                    # fail-closed coverage audit
 
 v1.0.6 — production-derived from an agent pipeline that has run daily verified backups since 2026-08.
 
+v1.0.7: new gap type REMOTE-MISMATCH — the manifest's declared `remote:` is compared against the actual `origin` URL; drift (repo moved, remote replaced) is flagged instead of silently audited under a stale destination.
 v1.0.6: optional `BACKUP.audit-ignore` at the audit ROOT to exclude non-backup-target repos from NO-MANIFEST noise (relative paths, `#` comments).
 v1.0.5: `audit.sh --json` machine-readable output for cron/CI consumers; fix quoted `last_verified` scalars false-flagging UNPARSEABLE-VERIFIED; JSON detail escaping.
 
