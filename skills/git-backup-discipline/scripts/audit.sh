@@ -84,18 +84,24 @@ while IFS= read -r -d '' repo; do
   fi
   BRANCH=$(git -C "$repo" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "?")
   HEAD_SHA=$(git -C "$repo" rev-parse HEAD 2>/dev/null || echo "?")
-  REMOTE_SHA=$(git -C "$repo" ls-remote origin -h "refs/heads/$BRANCH" 2>/dev/null | cut -f1)
+  # verify against the manifest-declared remote (the intended backup target),
+  # not the current origin — after a remote drift the origin check would pass
+  # while the declared backup destination silently goes stale.
+  M_REMOTE=$(sed -n 's/^remote:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
+  M_REMOTE=${M_REMOTE%\"}; M_REMOTE=${M_REMOTE#\"}; M_REMOTE=${M_REMOTE%\'}; M_REMOTE=${M_REMOTE#\'}
+  A_REMOTE=$(git -C "$repo" remote get-url origin 2>/dev/null || echo "")
+  VERIFY_URL=${M_REMOTE:-$A_REMOTE}
+  # bounded network call: a hung ls-remote must not wedge the audit in cron/CI
+  if command -v timeout >/dev/null 2>&1; then
+    REMOTE_SHA=$(timeout 30 git ls-remote "$VERIFY_URL" -h "refs/heads/$BRANCH" 2>/dev/null | cut -f1)
+  else
+    REMOTE_SHA=$(git ls-remote "$VERIFY_URL" -h "refs/heads/$BRANCH" 2>/dev/null | cut -f1)
+  fi
   if [ -z "$REMOTE_SHA" ]; then
     gap NO-REMOTE-STATE "$repo" "branch=$BRANCH"
   elif [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
     gap UNPUSHED "$repo" "head=${HEAD_SHA:0:7} remote=${REMOTE_SHA:0:7}"
   fi
-  # manifest declares the intended backup destination; if the actual origin has
-  # drifted (repo moved, remote replaced), the manifest is now a false record —
-  # audit the declared remote, not just the current one.
-  M_REMOTE=$(sed -n 's/^remote:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
-  M_REMOTE=${M_REMOTE%\"}; M_REMOTE=${M_REMOTE#\"}; M_REMOTE=${M_REMOTE%\'}; M_REMOTE=${M_REMOTE#\'}
-  A_REMOTE=$(git -C "$repo" remote get-url origin 2>/dev/null || echo "")
   if [ -n "$M_REMOTE" ] && [ -n "$A_REMOTE" ] && [ "$M_REMOTE" != "$A_REMOTE" ]; then
     gap REMOTE-MISMATCH "$repo" "manifest=$M_REMOTE actual=$A_REMOTE"
   fi
