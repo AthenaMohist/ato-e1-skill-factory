@@ -77,6 +77,25 @@ for p in out:
 PYEOF
   fi
 }
+# manifest-only checks shared by every code path (uncommitted changes, verified date)
+manifest_checks() { # $1 = repo path
+  if [ -n "$(git -C "$1" status --porcelain 2>/dev/null)" ]; then
+    gap UNCOMMITTED-CHANGES "$1"
+  fi
+  local LV=$(sed -n 's/^last_verified:[[:space:]]*//p' "$1/BACKUP.manifest.yml" 2>/dev/null | head -1)
+  LV=${LV%\"}; LV=${LV#\"}; LV=${LV%\'}; LV=${LV#\'}
+  LV=${LV:-never}
+  if [ "$LV" = "never" ]; then
+    gap NEVER-VERIFIED "$1"
+  else
+    local LV_EPOCH=$(iso_to_epoch "$LV")
+    if [ "$LV_EPOCH" -le 0 ]; then
+      gap UNPARSEABLE-VERIFIED "$1" "last=$LV"
+    elif [ $((NOW - LV_EPOCH)) -gt $((7*86400)) ]; then
+      gap STALE-VERIFIED "$1" "last=$LV"
+    fi
+  fi
+}
 while IFS= read -r -d '' repo; do
   if ignore_check "$repo"; then continue; fi
   if [ ! -f "$repo/BACKUP.manifest.yml" ]; then
@@ -87,16 +106,37 @@ while IFS= read -r -d '' repo; do
   # verify against the manifest-declared remote (the intended backup target),
   # not the current origin — after a remote drift the origin check would pass
   # while the declared backup destination silently goes stale.
+  # detached HEAD has no branch ref: ls-remote would silently return nothing
+  # and be misreported as NO-REMOTE-STATE; call it out as its own gap instead.
+  if ! git -C "$repo" symbolic-ref -q HEAD >/dev/null 2>&1; then
+    gap DETACHED-HEAD "$repo" "head=${HEAD_SHA:0:7}"
+    manifest_checks "$repo"
+    continue
+  fi
   M_REMOTE=$(sed -n 's/^remote:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
   M_REMOTE=${M_REMOTE%\"}; M_REMOTE=${M_REMOTE#\"}; M_REMOTE=${M_REMOTE%\'}; M_REMOTE=${M_REMOTE#\'}
   A_REMOTE=$(git -C "$repo" remote get-url origin 2>/dev/null || echo "")
   VERIFY_URL=${M_REMOTE:-$A_REMOTE}
-  # bounded network call: a hung ls-remote must not wedge the audit in cron/CI
-  if command -v timeout >/dev/null 2>&1; then
-    REMOTE_SHA=$(timeout 30 git ls-remote "$VERIFY_URL" -h "refs/heads/$BRANCH" 2>/dev/null | cut -f1)
+  # bounded network call: a hung ls-remote must not wedge the audit in cron/CI;
+  # stderr is captured so transport/auth failures are reported as
+  # REMOTE-UNREACHABLE rather than being masked as NO-REMOTE-STATE.
+  LS_ERR=""
+  if [ -z "$VERIFY_URL" ]; then
+    REMOTE_SHA=""
+  elif command -v timeout >/dev/null 2>&1; then
+    REMOTE_SHA=$(timeout 30 git ls-remote "$VERIFY_URL" -h "refs/heads/$BRANCH" 2>"$ROOT/.audit-ls-remote.err" | cut -f1)
   else
-    REMOTE_SHA=$(git ls-remote "$VERIFY_URL" -h "refs/heads/$BRANCH" 2>/dev/null | cut -f1)
+    REMOTE_SHA=$(git ls-remote "$VERIFY_URL" -h "refs/heads/$BRANCH" 2>"$ROOT/.audit-ls-remote.err" | cut -f1)
   fi
+  LS_RC=$?
+  if [ $LS_RC -ne 0 ] || { [ -z "$REMOTE_SHA" ] && [ -s "$ROOT/.audit-ls-remote.err" ]; }; then
+    LS_ERR=$(head -c 200 "$ROOT/.audit-ls-remote.err" 2>/dev/null | tr '\n' ' ')
+    gap REMOTE-UNREACHABLE "$repo" "url=$VERIFY_URL ${LS_ERR:+err=$LS_ERR}"
+    rm -f "$ROOT/.audit-ls-remote.err"
+    manifest_checks "$repo"
+    continue
+  fi
+  rm -f "$ROOT/.audit-ls-remote.err"
   if [ -z "$REMOTE_SHA" ]; then
     gap NO-REMOTE-STATE "$repo" "branch=$BRANCH"
   elif [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
@@ -105,23 +145,7 @@ while IFS= read -r -d '' repo; do
   if [ -n "$M_REMOTE" ] && [ -n "$A_REMOTE" ] && [ "$M_REMOTE" != "$A_REMOTE" ]; then
     gap REMOTE-MISMATCH "$repo" "manifest=$M_REMOTE actual=$A_REMOTE"
   fi
-  if [ -n "$(git -C "$repo" status --porcelain 2>/dev/null)" ]; then
-    gap UNCOMMITTED-CHANGES "$repo"
-  fi
-  LV=$(sed -n 's/^last_verified:[[:space:]]*//p' "$repo/BACKUP.manifest.yml" 2>/dev/null | head -1)
-  # strip surrounding quotes (yaml allows quoted scalars; unquoted parsing would false-positive UNPARSEABLE)
-  LV=${LV%\"}; LV=${LV#\"}; LV=${LV%\'}; LV=${LV#\'}
-  LV=${LV:-never}
-  if [ "$LV" = "never" ]; then
-    gap NEVER-VERIFIED "$repo"
-  else
-    LV_EPOCH=$(iso_to_epoch "$LV")
-    if [ "$LV_EPOCH" -le 0 ]; then
-      gap UNPARSEABLE-VERIFIED "$repo" "last=$LV"
-    elif [ $((NOW - LV_EPOCH)) -gt $((7*86400)) ]; then
-      gap STALE-VERIFIED "$repo" "last=$LV"
-    fi
-  fi
+  manifest_checks "$repo"
 done < <(list_repos)
 if [ "$JSON" -eq 1 ]; then
   printf '{"root":"%s","gapCount":%d,"gaps":[%s]}\n' "$ROOT" "$GAPS" "$JSON_GAPS"
