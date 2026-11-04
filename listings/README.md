@@ -10,6 +10,20 @@
 
 ## Market research log
 
+### 2026-11-04
+- **SkillsMP re-check**: still updatedAt=10-25 (v1.0.7/v1.0.8 content) for the two
+  `git-backup-discipline` entries — now 10 days stale, beyond the historical ~10-day
+  sync cycle. `agent-token-budget` unchanged at 10-18. API responds 200, so the
+  index is alive but this repo's re-fetch appears stalled; treat daily re-checks as
+  low-yield until they update.
+- **agent-token-budget v1.1.0 — per-run enforcement**: audit found `per_run`
+  ceilings were displayed but never checked — a single 6000-token run passed with
+  `output_ceiling: 100` because only the daily total was compared. Fixed:
+  `budget_check.sh` now also checks the most recent meter line against both
+  per-run caps; 8 self-test scenarios green (per-run in/out breach, daily breach,
+  within-caps rc0, notify-only rc0, invalid on_breach rc1, no-config rc1).
+  Commit `b0c1095`, pushed, HEAD == origin/main.
+
 ### 2026-10-18
 - **SkillsMP INDEXED** — after 10 days, `git-backup-discipline` now appears in the
   SkillsMP API (2 entries: skill-file view + repo view) with a live listing page
