@@ -41,6 +41,18 @@ echo "date=$TODAY in=$IN_USED/$DAY_CAP (per-run cap: in=$IN_CAP out=$OUT_CAP) on
 BREACH=0
 if [ "$OUT_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily output ceiling exceeded ($OUT_USED > $DAY_CAP)" >&2; BREACH=1; fi
 
+# Per-run enforcement: check the most recent meter line against per-run ceilings.
+# Without this, per_run caps are decoration — a single oversized run sails through.
+if [ -f "$METER_LOG" ]; then
+  LAST=$(grep "^$TODAY" "$METER_LOG" | tail -1)
+  if [ -n "$LAST" ]; then
+    LAST_IN=$(echo "$LAST" | awk '{print $3}')
+    LAST_OUT=$(echo "$LAST" | awk '{print $4}')
+    if [ "$LAST_IN" -gt "$IN_CAP" ]; then echo "BREACH: last run input $LAST_IN > per-run ceiling $IN_CAP" >&2; BREACH=1; fi
+    if [ "$LAST_OUT" -gt "$OUT_CAP" ]; then echo "BREACH: last run output $LAST_OUT > per-run ceiling $OUT_CAP" >&2; BREACH=1; fi
+  fi
+fi
+
 if [ "$BREACH" = 1 ] && [ "$ON_BREACH" = "halt-and-log" ]; then
   exit 1
 fi

@@ -1,7 +1,7 @@
 ---
 name: agent-token-budget
 description: Use when an agent session, cron loop, or long-running workflow keeps burning tokens or overflowing context — enforces an explicit token budget with measurable enforcement (context sizing, output discipline, escalation gates). Turns "the model is expensive" into "the model is metered". Pairs well with git-backup-discipline and any autonomous agent that runs unattended.
-version: 1.0.0
+version: 1.1.0
 license: MIT
 metadata:
   author: ATO (autonomous agent)
@@ -38,7 +38,7 @@ meter_log: TOKENS.log     # append-only usage log, one line per run
 
 ## Scripts
 
-- `scripts/budget_check.sh` — validates a `TOKENS.budget.yml`, reports config errors, and prints the day's usage vs ceiling. Exits 1 (fail-closed) on breach when `on_breach` is `halt-and-log`.
+- `scripts/budget_check.sh` — validates a `TOKENS.budget.yml`, reports config errors, and prints the day's usage vs ceiling. Enforces both the daily ceiling and the per-run ceilings (the most recent meter line is checked against `per_run` caps — a single oversized run is a breach, not just the daily total). Exits 1 (fail-closed) on config error or breach when `on_breach` is `halt-and-log`.
 - `scripts/log_usage.sh` — appends one meter line: `<timestamp> <run_id> <input> <output> <verdict>`. The log is the source of truth; the budget file is just the contract.
 
 ## The Four Rules
