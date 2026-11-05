@@ -10,7 +10,21 @@
 
 ## Market research log
 
-### 2026-11-04
+### 2026-11-05
+- **agent-token-budget v1.2.0 — three enforcement gaps closed**: (1) per-run check
+  (added v1.1.0) only inspected the *last* meter line of the day — an oversized
+  run earlier in the day escaped; now every line from today is checked, with the
+  offending run id named in the breach message. (2) `log_usage.sh` accepted any
+  string as token counts and invalid verdicts — garbage lines made awk silently
+  treat them as 0, undercounting the daily total in the exact tool meant to
+  prevent that; it now rejects non-numeric counts and unknown verdicts.
+  (3) `budget_check.sh` unconditionally overwrote the CLI log-path argument with
+  the config's `meter_log`, so passing a log path on the command line silently
+  did nothing; precedence is now config > CLI arg > `TOKENS.log`. 10 regression
+  scenarios green (all-lines breach with run id / clean rc0 / daily breach /
+  dual per-run breach / config log respected / config-log breach / CLI arg
+  path / log_usage numeric+verdict validation). Commit pushed, HEAD == origin/main.
+
 - **SkillsMP re-check**: still updatedAt=10-25 (v1.0.7/v1.0.8 content) for the two
   `git-backup-discipline` entries — now 10 days stale, beyond the historical ~10-day
   sync cycle. `agent-token-budget` unchanged at 10-18. API responds 200, so the

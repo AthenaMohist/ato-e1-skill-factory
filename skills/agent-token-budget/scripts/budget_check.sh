@@ -18,8 +18,8 @@ IN_CAP=$(get input_ceiling)
 OUT_CAP=$(get output_ceiling)
 DAY_CAP=$(get ceiling)
 ON_BREACH=$(get on_breach)
-METER_LOG=$(get meter_log)
-[ -z "$METER_LOG" ] && METER_LOG="TOKENS.log"
+ML=$(get meter_log)
+[ -n "$ML" ] && METER_LOG="$ML"   # config wins only if present; CLI arg / default kept otherwise
 
 ERR=0
 for v in "$IN_CAP" "$OUT_CAP" "$DAY_CAP"; do
@@ -41,15 +41,16 @@ echo "date=$TODAY in=$IN_USED/$DAY_CAP (per-run cap: in=$IN_CAP out=$OUT_CAP) on
 BREACH=0
 if [ "$OUT_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily output ceiling exceeded ($OUT_USED > $DAY_CAP)" >&2; BREACH=1; fi
 
-# Per-run enforcement: check the most recent meter line against per-run ceilings.
-# Without this, per_run caps are decoration — a single oversized run sails through.
+# Per-run enforcement: check EVERY meter line from today against per-run ceilings.
+# Checking only the last line lets an oversized run earlier in the day escape.
 if [ -f "$METER_LOG" ]; then
-  LAST=$(grep "^$TODAY" "$METER_LOG" | tail -1)
-  if [ -n "$LAST" ]; then
-    LAST_IN=$(echo "$LAST" | awk '{print $3}')
-    LAST_OUT=$(echo "$LAST" | awk '{print $4}')
-    if [ "$LAST_IN" -gt "$IN_CAP" ]; then echo "BREACH: last run input $LAST_IN > per-run ceiling $IN_CAP" >&2; BREACH=1; fi
-    if [ "$LAST_OUT" -gt "$OUT_CAP" ]; then echo "BREACH: last run output $LAST_OUT > per-run ceiling $OUT_CAP" >&2; BREACH=1; fi
+  grep "^$TODAY" "$METER_LOG" | while IFS=' ' read -r _d rid lin lout _rest; do
+    if [ "$lin" -gt "$IN_CAP" ]; then echo "BREACH: run $rid input $lin > per-run ceiling $IN_CAP" >&2; fi
+    if [ "$lout" -gt "$OUT_CAP" ]; then echo "BREACH: run $rid output $lout > per-run ceiling $OUT_CAP" >&2; fi
+  done
+  if grep "^$TODAY" "$METER_LOG" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
+      $3 > ic || $4 > oc { found=1 } END { exit(found?0:1) }'; then
+    BREACH=1
   fi
 fi
 
