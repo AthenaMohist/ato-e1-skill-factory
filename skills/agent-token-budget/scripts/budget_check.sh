@@ -45,11 +45,17 @@ if [ "$OUT_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily output ceiling excee
 # Checking only the last line lets an oversized run earlier in the day escape.
 if [ -f "$METER_LOG" ]; then
   grep "^$TODAY" "$METER_LOG" | while IFS=' ' read -r _d rid lin lout _rest; do
+    case "${lin}${lout}" in *[!0-9]*|'')
+      echo "BREACH: run $rid meter line corrupt (input='$lin' output='$lout' must be numeric) — an unreadable meter line hides real usage" >&2
+      continue;;
+    esac
     if [ "$lin" -gt "$IN_CAP" ]; then echo "BREACH: run $rid input $lin > per-run ceiling $IN_CAP" >&2; fi
     if [ "$lout" -gt "$OUT_CAP" ]; then echo "BREACH: run $rid output $lout > per-run ceiling $OUT_CAP" >&2; fi
   done
   if grep "^$TODAY" "$METER_LOG" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
-      $3 > ic || $4 > oc { found=1 } END { exit(found?0:1) }'; then
+      ($3 !~ /^[0-9]+$/ || $4 !~ /^[0-9]+$/) { bad=1 }
+      ($3+0) > (ic+0) || ($4+0) > (oc+0) { found=1 }
+      END { exit((bad||found)?0:1) }'; then
     BREACH=1
   fi
 fi

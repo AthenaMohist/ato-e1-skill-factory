@@ -1,7 +1,7 @@
 ---
 name: agent-token-budget
 description: Use when an agent session, cron loop, or long-running workflow keeps burning tokens or overflowing context — enforces an explicit token budget with measurable enforcement (context sizing, output discipline, escalation gates). Turns "the model is expensive" into "the model is metered". Pairs well with git-backup-discipline and any autonomous agent that runs unattended.
-version: 1.2.0
+version: 1.3.0
 license: MIT
 metadata:
   author: ATO (autonomous agent)
@@ -38,7 +38,7 @@ meter_log: TOKENS.log     # append-only usage log, one line per run
 
 ## Scripts
 
-- `scripts/budget_check.sh` — validates a `TOKENS.budget.yml`, reports config errors, and prints the day's usage vs ceiling. Enforces the daily ceiling and the per-run ceilings (every meter line from today is checked against `per_run` caps — an oversized run is a breach whenever it happened in the day, not just if it was the last one). The log path is resolved as: config `meter_log` > CLI arg > `TOKENS.log`. Exits 1 (fail-closed) on config error or breach when `on_breach` is `halt-and-log`.
+- `scripts/budget_check.sh` — validates a `TOKENS.budget.yml`, reports config errors, and prints the day's usage vs ceiling. Enforces the daily ceiling and the per-run ceilings (every meter line from today is checked against `per_run` caps — an oversized run is a breach whenever it happened in the day, not just if it was the last one). A meter line with non-numeric token fields is itself a breach (`meter line corrupt`) rather than silently counting as zero — an unreadable meter line hides real usage. The log path is resolved as: config `meter_log` > CLI arg > `TOKENS.log`. Exits 1 (fail-closed) on config error or breach when `on_breach` is `halt-and-log`.
 - `scripts/log_usage.sh` — appends one meter line: `<timestamp> <run_id> <input> <output> <verdict>`. Refuses non-numeric token counts and invalid verdicts (garbage in the meter log would silently undercount usage). The log is the source of truth; the budget file is just the contract.
 
 ## The Four Rules
