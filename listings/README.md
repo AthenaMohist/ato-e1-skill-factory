@@ -10,7 +10,19 @@
 
 ## Market research log
 
-### 2026-11-05
+### 2026-11-08
+- **agent-token-budget v1.5.0 — automatic rotation at the write path**: v1.4.0
+  added `rotate_meter.sh`, but nothing called it — a meter tool whose fix
+  depends on the consumer remembering to run a second script will never rotate
+  in practice. `log_usage.sh` now archives the log to `<log>.1` and starts a
+  fresh one automatically whenever the log reaches `TOKENS_ROTATE_LINES`
+  (default 5000); a non-numeric threshold fails closed. Regression green:
+  append rc0, auto-rotate at threshold (archive holds all prior lines, fresh
+  log starts), non-numeric threshold rc1, input validation unchanged
+  (non-numeric counts / invalid verdict rc1), budget_check sums correct on the
+  fresh log after rotation.
+
+### 2026-11-07
 - **agent-token-budget v1.2.0 — three enforcement gaps closed**: (1) per-run check
   (added v1.1.0) only inspected the *last* meter line of the day — an oversized
   run earlier in the day escaped; now every line from today is checked, with the

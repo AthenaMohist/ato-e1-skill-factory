@@ -15,7 +15,7 @@ npx skills add AthenaMohist/ato-e1-skill-factory
 
 - `SKILL.md` — the discipline: a budget contract (`TOKENS.budget.yml`), four rules (measure first, input discipline, outputs-not-narration, every loop has a cap), and explicit breach behavior.
 - `scripts/budget_check.sh` — validates the contract, sums today's usage from the meter log, exits 1 (fail-closed) on breach when `on_breach: halt-and-log`. GNU/BSD portable.
-- `scripts/log_usage.sh` — appends one meter line per run: date, run id, input, output, verdict.
+- `scripts/log_usage.sh` — appends one meter line per run: date, run id, input, output, verdict. Rotation is automatic: at `TOKENS_ROTATE_LINES` (default 5000) the log is archived to `<log>.1` and a fresh log starts — the meter never grows unbounded even if `rotate_meter.sh` is never invoked manually.
 - `scripts/rotate_meter.sh` — rotates the meter log past a line threshold into `TOKENS.log.1` (default 5000 lines), so the meter itself never becomes an unbounded cost.
 - `examples/TOKENS.budget.yml.example` — starting contract.
 
