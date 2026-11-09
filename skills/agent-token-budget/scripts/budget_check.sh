@@ -31,11 +31,15 @@ case "$ON_BREACH" in halt-and-log|degrade|notify-only) ;; *) echo "ERROR: on_bre
 # Sum today's usage from the meter log (date computed portably via python3, sed fallback)
 TODAY=$(python3 -c "import datetime;print(datetime.date.today())" 2>/dev/null \
   || date +%Y-%m-%d)
+# Rotation (log_usage.sh auto-rotate) moves earlier lines into <log>.1 — today's
+# usage can span both files. Ignoring the archive silently undercounts the day.
 IN_USED=0; OUT_USED=0
-if [ -f "$METER_LOG" ]; then
-  IN_USED=$(grep "^$TODAY" "$METER_LOG" | awk '{s+=$3} END{print s+0}')
-  OUT_USED=$(grep "^$TODAY" "$METER_LOG" | awk '{s+=$4} END{print s+0}')
-fi
+for LOGF in "$METER_LOG" "$METER_LOG.1"; do
+  if [ -f "$LOGF" ]; then
+    IN_USED=$((IN_USED + $(grep "^$TODAY" "$LOGF" | awk '{s+=$3} END{print s+0}')))
+    OUT_USED=$((OUT_USED + $(grep "^$TODAY" "$LOGF" | awk '{s+=$4} END{print s+0}')))
+  fi
+done
 
 echo "date=$TODAY in=$IN_USED/$DAY_CAP (per-run cap: in=$IN_CAP out=$OUT_CAP) on_breach=$ON_BREACH"
 BREACH=0
@@ -43,8 +47,9 @@ if [ "$OUT_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily output ceiling excee
 
 # Per-run enforcement: check EVERY meter line from today against per-run ceilings.
 # Checking only the last line lets an oversized run earlier in the day escape.
-if [ -f "$METER_LOG" ]; then
-  grep "^$TODAY" "$METER_LOG" | while IFS=' ' read -r _d rid lin lout _rest; do
+for LOGF in "$METER_LOG" "$METER_LOG.1"; do
+  [ -f "$LOGF" ] || continue
+  grep "^$TODAY" "$LOGF" | while IFS=' ' read -r _d rid lin lout _rest; do
     case "${lin}${lout}" in *[!0-9]*|'')
       echo "BREACH: run $rid meter line corrupt (input='$lin' output='$lout' must be numeric) — an unreadable meter line hides real usage" >&2
       continue;;
@@ -52,13 +57,13 @@ if [ -f "$METER_LOG" ]; then
     if [ "$lin" -gt "$IN_CAP" ]; then echo "BREACH: run $rid input $lin > per-run ceiling $IN_CAP" >&2; fi
     if [ "$lout" -gt "$OUT_CAP" ]; then echo "BREACH: run $rid output $lout > per-run ceiling $OUT_CAP" >&2; fi
   done
-  if grep "^$TODAY" "$METER_LOG" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
+  if cat "$LOGF" 2>/dev/null | grep "^$TODAY" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
       ($3 !~ /^[0-9]+$/ || $4 !~ /^[0-9]+$/) { bad=1 }
       ($3+0) > (ic+0) || ($4+0) > (oc+0) { found=1 }
       END { exit((bad||found)?0:1) }'; then
     BREACH=1
   fi
-fi
+done
 
 if [ "$BREACH" = 1 ] && [ "$ON_BREACH" = "halt-and-log" ]; then
   exit 1
