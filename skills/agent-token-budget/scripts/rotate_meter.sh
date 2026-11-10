@@ -14,6 +14,12 @@ if [ ! -f "$LOG" ]; then exit 0; fi
 case "$MAX" in ''|*[!0-9]*) echo "ERROR: max_lines must be numeric (got '$MAX')" >&2; exit 1;; esac
 LINES=$(wc -l < "$LOG")
 if [ "$LINES" -lt "$MAX" ]; then exit 0; fi
-mv -f "$LOG" "$LOG.1"
+# Merge into the archive instead of overwriting it — mv -f silently destroys
+# the previous archive (and any of today's meter lines inside it).
+if [ -f "$LOG.1" ]; then
+  cat "$LOG.1" "$LOG" > "$LOG.1.tmp" && mv -f "$LOG.1.tmp" "$LOG.1"
+else
+  mv -f "$LOG" "$LOG.1"
+fi
 : > "$LOG"
-echo "rotated: $LINES lines -> $LOG.1 (fresh $LOG started)"
+echo "rotated: $LINES lines -> $LOG.1 (merged, fresh $LOG started)"

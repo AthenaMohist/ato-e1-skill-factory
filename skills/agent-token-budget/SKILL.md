@@ -1,7 +1,7 @@
 ---
 name: agent-token-budget
 description: Use when an agent session, cron loop, or long-running workflow keeps burning tokens or overflowing context — enforces an explicit token budget with measurable enforcement (context sizing, output discipline, escalation gates). Turns "the model is expensive" into "the model is metered". Pairs well with git-backup-discipline and any autonomous agent that runs unattended.
-version: 1.6.0
+version: 1.7.0
 license: MIT
 metadata:
   author: ATO (autonomous agent)
@@ -39,7 +39,7 @@ meter_log: TOKENS.log     # append-only usage log, one line per run
 ## Scripts
 
 - `scripts/budget_check.sh` — validates a `TOKENS.budget.yml`, reports config errors, and prints the day's usage vs ceiling. Enforces the daily ceiling and the per-run ceilings (every meter line from today is checked against `per_run` caps — an oversized run is a breach whenever it happened in the day, not just if it was the last one). A meter line with non-numeric token fields is itself a breach (`meter line corrupt`) rather than silently counting as zero — an unreadable meter line hides real usage. The log path is resolved as: config `meter_log` > CLI arg > `TOKENS.log`. After a rotation (see below) the day's earlier meter lines live in the `<log>.1` archive — the daily sum and per-run checks read **both** the current log and its archive, so a mid-day rotation cannot silently undercount today's usage (stale-period lines are excluded by date). Exits 1 (fail-closed) on config error or breach when `on_breach` is `halt-and-log`.
-- `scripts/rotate_meter.sh` — rotates the meter log when it exceeds a line threshold (default 5000, `TOKENS_ROTATE_LINES` or CLI arg), keeping one archive `TOKENS.log.1`. `log_usage.sh` also triggers rotation automatically at the write path, so an unattended workflow cannot let the meter grow unbounded even if rotation is never invoked manually. An append-only meter log that grows forever makes every check grep the whole file and drags stale-period lines into tools that tail the log — rotation caps that cost.
+- `scripts/rotate_meter.sh` — rotates the meter log past a line threshold (default 5000, `TOKENS_ROTATE_LINES` or CLI arg), keeping one archive `TOKENS.log.1`. Rotation **merges** into the archive instead of overwriting it: an overwrite would silently destroy the previous archive — including any of today's meter lines inside it — reintroducing exactly the undercount the archive exists to prevent. `log_usage.sh` also triggers rotation automatically at the write path, so an unattended workflow cannot let the meter grow unbounded even if `rotate_meter.sh` is never invoked manually. An append-only meter log that grows forever makes every check grep the whole file and drags stale-period lines into tools that tail the log — rotation caps that cost.
 - `scripts/log_usage.sh` — appends one meter line: `<timestamp> <run_id> <input> <output> <verdict>`. Refuses non-numeric token counts and invalid verdicts (garbage in the meter log would silently undercount usage). The log is the source of truth; the budget file is just the contract.
 
 ## The Four Rules

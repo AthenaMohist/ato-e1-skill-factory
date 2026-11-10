@@ -18,7 +18,15 @@ echo "$TODAY $RUN_ID $IN_T $OUT_T $VERDICT" >> "$LOG"
 MAX="${TOKENS_ROTATE_LINES:-5000}"
 case "$MAX" in ''|*[!0-9]*) echo "ERROR: TOKENS_ROTATE_LINES must be numeric (got '$MAX')" >&2; exit 1;; esac
 if [ "$(wc -l < "$LOG")" -ge "$MAX" ]; then
-  mv -f "$LOG" "$LOG.1"
+  # Merge into the archive instead of overwriting it: mv -f would silently
+  # destroy the previous archive, including any of today's meter lines in it
+  # (a second rotation within one day is exactly the case budget_check.sh
+  # reads the archive to cover). Oldest lines stay first.
+  if [ -f "$LOG.1" ]; then
+    cat "$LOG.1" "$LOG" > "$LOG.1.tmp" && mv -f "$LOG.1.tmp" "$LOG.1"
+  else
+    mv -f "$LOG" "$LOG.1"
+  fi
   : > "$LOG"
-  echo "rotated: $((MAX))+ lines -> $LOG.1 (fresh $LOG started)" >&2
+  echo "rotated: $((MAX))+ lines -> $LOG.1 (merged, fresh $LOG started)" >&2
 fi
