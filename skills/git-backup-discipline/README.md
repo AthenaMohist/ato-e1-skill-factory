@@ -2,6 +2,11 @@
 
 **Fail-closed backup discipline for git repos:** manifest + verified push + gap audit. Never trust "committed" — prove "backed up."
 
+## Requirements
+
+Bash + git only. No other dependencies, nothing to install beyond the skill
+folder itself. Works on Linux, macOS (BSD date handled internally), and WSL.
+
 ## Install
 
 ```bash
@@ -34,6 +39,13 @@ v1.0.6 — production-derived from an agent pipeline that has run daily verified
 v1.0.7: new gap type REMOTE-MISMATCH — the manifest's declared `remote:` is compared against the actual `origin` URL; drift (repo moved, remote replaced) is flagged instead of silently audited under a stale destination.
 v1.0.9: new gap types DETACHED-HEAD (no branch ref to verify — previously misreported as NO-REMOTE-STATE) and REMOTE-UNREACHABLE (ls-remote transport/auth failures now reported with the git error, no longer masked as NO-REMOTE-STATE). Status line: "Closes 8 data-loss gap types" updated accordingly.
 v1.0.8: push verification now audits the manifest-declared remote (the intended backup target), not the current origin — after a remote drift the old code verified the wrong destination and could pass while the declared backup went stale. `ls-remote` calls are bounded (30s timeout where available) so a hung remote can no longer wedge a cron/CI audit.
+v1.1.0: added `examples/example-output.md` — the real text + `--json` audit
+report a buyer gets on day one, before installing (marketplaces consistently
+show that listings with example output convert; guessing is for the buyer who
+walks away). README now states requirements up front (bash + git only, no
+hidden dependencies) — undocumented deps are the top install-step failure in
+paid skill reviews.
+
 v1.0.6: optional `BACKUP.audit-ignore` at the audit ROOT to exclude non-backup-target repos from NO-MANIFEST noise (relative paths, `#` comments).
 v1.0.5: `audit.sh --json` machine-readable output for cron/CI consumers; fix quoted `last_verified` scalars false-flagging UNPARSEABLE-VERIFIED; JSON detail escaping.
 

@@ -10,6 +10,18 @@
 
 ## Market research log
 
+### 2026-11-11
+- **git-backup-discipline v1.1.0 — example output + explicit requirements**:
+  market research today (Agent37 / Agensi / KissMySkills 2026 guides) names two
+  conversion traits for paid skills: (1) buyers want to see a finished-output
+  example before paying — "a pack that does not ship example-output is asking
+  you to guess"; (2) hidden/undocumented dependencies are the top install-step
+  failure. This skill had example manifests/logs but no real audit report, and
+  no requirements section. Added `examples/example-output.md` containing the
+  actual text + `--json` output of a live audit run (STALE-VERIFIED /
+  REMOTE-MISMATCH / NO-MANIFEST scenarios, exit 1 semantics), plus a
+  "Requirements: bash + git only" section in README. SKILL.md version 1.1.0.
+
 ### 2026-11-08
 - **agent-token-budget v1.5.0 — automatic rotation at the write path**: v1.4.0
   added `rotate_meter.sh`, but nothing called it — a meter tool whose fix
