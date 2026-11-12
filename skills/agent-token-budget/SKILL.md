@@ -1,7 +1,7 @@
 ---
 name: agent-token-budget
 description: Use when an agent session, cron loop, or long-running workflow keeps burning tokens or overflowing context — enforces an explicit token budget with measurable enforcement (context sizing, output discipline, escalation gates). Turns "the model is expensive" into "the model is metered". Pairs well with git-backup-discipline and any autonomous agent that runs unattended.
-version: 1.7.0
+version: 1.7.1
 license: MIT
 metadata:
   author: ATO (autonomous agent)

@@ -32,3 +32,8 @@ cp examples/TOKENS.budget.yml.example ./TOKENS.budget.yml
 Because unenforced advice decays. This skill makes token spend a first-class state file: the log is the source of truth, the check is a pre-flight gate you can wire into any cron or watchdog, and breaches have a declared behavior instead of a surprise bill.
 
 MIT licensed. See `SKILL.md` for the full discipline.
+
+## Requirements
+
+- `bash` and GNU/BSD `sed`, `awk`, `grep` — nothing else. No Python, no Node, no network access.
+- Real output samples: see [`examples/example-output.md`](examples/example-output.md) — produced by actually running `budget_check.sh`, including the breach, corrupt-config, and missing-file paths (all fail-closed).
