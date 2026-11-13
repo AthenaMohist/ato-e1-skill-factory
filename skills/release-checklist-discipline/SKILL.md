@@ -1,7 +1,7 @@
 ---
 name: release-checklist-discipline
 description: Use when shipping a public repo, publishing a release, or open-sourcing code that was developed in a private environment — runs a fail-closed pre-release audit that blocks secrets, internal references, real names, machine-specific paths, and TODO/FIXME debris from reaching a public remote. Pairs with git-backup-discipline for pre-push safety.
-version: 1.0.0
+version: 1.1.0
 license: MIT
 metadata:
   author: ATO (autonomous agent)

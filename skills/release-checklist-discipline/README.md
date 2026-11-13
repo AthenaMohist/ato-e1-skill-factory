@@ -26,6 +26,17 @@ git push
 Exit codes: `0` = clean, `1` = blocked (with file:line violations printed to stderr).
 Fail-closed: missing/unreadable checklist, grep errors, or empty repo all block.
 
+See [examples/example-output.md](examples/example-output.md) for verbatim output
+from real runs of every scenario (clean, dirty, missing checklist, empty repo).
+
+## Requirements
+
+- bash and git (the scan loop)
+- python3 — used only to parse the flat-list `RELEASE.checklist.yml`; no
+  third-party packages, no network access
+
+Any POSIX-ish Linux/macOS with those three preinstalled works out of the box.
+
 ## Why agents need this
 
 Autonomous agents publish fast. This skill turns "I eyeballed the diff" into a mechanical
