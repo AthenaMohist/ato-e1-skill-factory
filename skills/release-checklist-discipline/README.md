@@ -7,7 +7,7 @@ the push when secrets, internal references, machine paths, or required files are
 ## Install
 
 ```
-npx skills add AthenaMohist/ato-e1-skill-factory/releases --skill release-checklist-discipline
+npx skills add AthenaMohist/ato-e1-skill-factory --skill release-checklist-discipline
 ```
 
 (Or copy the `skills/release-checklist-discipline/` directory into your agent's skills folder.)
