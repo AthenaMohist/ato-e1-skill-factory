@@ -28,6 +28,7 @@ bash scripts/audit.sh ~/projects                    # fail-closed coverage audit
 |------|--------------------|
 | Local commit ≠ backup | Machine dies before push |
 | Push exit 0 ≠ backup (verify remote SHA == HEAD) | Silent push failures, stale remotes |
+| Uncommitted changes ≠ backed up (backup.sh blocks dirty worktrees) | "Verified" backup that silently excludes today's work |
 | Every repo needs a `BACKUP.manifest.yml` | Coverage gaps nobody notices |
 | Audit exits non-zero on any gap | Pipelines that "succeed" while unprotected |
 | Log every attempt (success and failure) | No forensic trail after an incident |
@@ -45,6 +46,12 @@ show that listings with example output convert; guessing is for the buyer who
 walks away). README now states requirements up front (bash + git only, no
 hidden dependencies) — undocumented deps are the top install-step failure in
 paid skill reviews.
+
+v1.2.0: `backup.sh` is now fail-closed on dirty worktrees — uncommitted changes
+are not in any commit, so a "successful" push used to leave real work unbacked
+while still printing "backup verified" (gap type 6 was only caught by the
+passive audit). The skill's own `BACKUP.*` artifacts are excluded; a
+`BACKUP_ALLOW_DIRTY=1` override pushes with a WARN and always records the gap.
 
 v1.0.6: optional `BACKUP.audit-ignore` at the audit ROOT to exclude non-backup-target repos from NO-MANIFEST noise (relative paths, `#` comments).
 v1.0.5: `audit.sh --json` machine-readable output for cron/CI consumers; fix quoted `last_verified` scalars false-flagging UNPARSEABLE-VERIFIED; JSON detail escaping.
