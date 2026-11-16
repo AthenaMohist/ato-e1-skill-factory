@@ -41,9 +41,10 @@ for LOGF in "$METER_LOG" "$METER_LOG.1"; do
   fi
 done
 
-echo "date=$TODAY in=$IN_USED/$DAY_CAP (per-run cap: in=$IN_CAP out=$OUT_CAP) on_breach=$ON_BREACH"
+echo "date=$TODAY in+out=$((IN_USED + OUT_USED))/$DAY_CAP (per-run cap: in=$IN_CAP out=$OUT_CAP) on_breach=$ON_BREACH"
 BREACH=0
-if [ "$OUT_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily output ceiling exceeded ($OUT_USED > $DAY_CAP)" >&2; BREACH=1; fi
+TOTAL_USED=$((IN_USED + OUT_USED))
+if [ "$TOTAL_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily ceiling exceeded (in+out=$TOTAL_USED > $DAY_CAP)" >&2; BREACH=1; fi
 
 # Per-run enforcement: check EVERY meter line from today against per-run ceilings.
 # Checking only the last line lets an oversized run earlier in the day escape.
