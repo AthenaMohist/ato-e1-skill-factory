@@ -8,7 +8,14 @@
 # file, (b) gets reread into agent context by tools that tail it, (c) mixes
 # stale-period lines into today's sums. Rotation caps all three.
 set -u
+# Meter log path resolution must match budget_check.sh (the reader): CLI arg >
+# config `meter_log` > env > TOKENS.log (see log_usage.sh cfg_meter_log).
+cfg_meter_log() {
+  [ -f "TOKENS.budget.yml" ] || return 0
+  sed -n "s/^[[:space:]]*meter_log:[[:space:]]*//p" TOKENS.budget.yml | head -1 | sed 's/[[:space:]]*#.*//' | tr -d '[:space:]'
+}
 LOG="${1:-${TOKENS_METER_LOG:-TOKENS.log}}"
+[ -z "${1:-}" ] && { ML=$(cfg_meter_log); [ -n "$ML" ] && LOG="$ML"; }
 MAX="${2:-${TOKENS_ROTATE_LINES:-5000}}"
 if [ ! -f "$LOG" ]; then exit 0; fi
 case "$MAX" in ''|*[!0-9]*) echo "ERROR: max_lines must be numeric (got '$MAX')" >&2; exit 1;; esac

@@ -6,6 +6,13 @@
 # tool that relies on the consumer remembering to run rotate_meter.sh will never
 # rotate in practice — enforcement belongs at the write path, not the docs.
 set -u
+# Meter log path resolution must match budget_check.sh (the reader): config
+# `meter_log` > env > TOKENS.log. A writer that ignores the config writes to a
+# different file than the reader checks — usage is silently undercounted.
+cfg_meter_log() {
+  [ -f "TOKENS.budget.yml" ] || return 0
+  sed -n "s/^[[:space:]]*meter_log:[[:space:]]*//p" TOKENS.budget.yml | head -1 | sed 's/[[:space:]]*#.*//' | tr -d '[:space:]'
+}
 RUN_ID="${1:?usage: log_usage.sh <run_id> <input> <output> [verdict]}"
 IN_T="${2:?}"
 OUT_T="${3:?}"
@@ -13,6 +20,7 @@ VERDICT="${4:-ok}"
 case "$IN_T$OUT_T" in *[!0-9]*) echo "ERROR: token counts must be numeric (got in=$IN_T out=$OUT_T) — refusing to log garbage that would silently undercount usage" >&2; exit 1;; esac
 case "$VERDICT" in ok|breach) ;; *) echo "ERROR: verdict must be ok|breach" >&2; exit 1;; esac
 LOG="${TOKENS_METER_LOG:-TOKENS.log}"
+ML=$(cfg_meter_log); [ -n "$ML" ] && LOG="$ML"
 TODAY=$(python3 -c "import datetime;print(datetime.date.today())" 2>/dev/null || date +%Y-%m-%d)
 echo "$TODAY $RUN_ID $IN_T $OUT_T $VERDICT" >> "$LOG"
 MAX="${TOKENS_ROTATE_LINES:-5000}"
