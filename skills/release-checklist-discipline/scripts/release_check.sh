@@ -24,9 +24,12 @@ import sys, re
 text = open(sys.argv[1]).read()
 stack = []  # (indent, section-name)
 for raw in text.splitlines():
-    line = raw.split('#', 1)[0].rstrip()
-    if not line.strip():
+    # strip comments ONLY when '#' starts the line or follows whitespace —
+    # a '#' inside a value (deny_patterns regex, version spec) is data, not a comment.
+    stripped = re.sub(r'(^|\s)#.*$', '', raw).rstrip()
+    if not stripped.strip():
         continue
+    line = stripped
     indent = len(line) - len(line.lstrip())
     m = re.match(r'^(\w+):\s*$', line.strip())
     if m:
@@ -38,6 +41,12 @@ for raw in text.splitlines():
     if m and stack:
         val = m.group(1).strip().strip("'\"")
         print(f"{stack[-1][1]}\t{val}")
+        continue
+    # FAIL-CLOSED: any non-blank line we cannot understand means the checklist
+    # itself is malformed — silently skipping it would let a broken rule
+    # disappear and the gate would pass a checklist that never ran.
+    sys.stderr.write(f"unparsable checklist line: {raw.strip()}\n")
+    sys.exit(1)
 PYEOF
 [ -s "$$.fields" ] || fail "checklist has no parsable entries"
 
