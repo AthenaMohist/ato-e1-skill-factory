@@ -19,7 +19,14 @@ git ls-files >/dev/null || fail "git ls-files failed"
 viol=0
 
 # --- collect checklist fields with a tiny flat-list parser ---
-python3 - "$CHECKLIST" <<'PYEOF' > "$$.fields" || fail "checklist parse failed"
+# Temp file lives in $TMPDIR (OUTSIDE the repo) and a trap removes it on every
+# exit path — writing "$FIELDS" inside the working tree leaked an untracked
+# scratch file into the repo whenever the gate blocked (parse fail, violations),
+# which could then be committed into the very release being audited.
+FIELDS="$(mktemp "${TMPDIR:-/tmp}/release_check.XXXXXX")"
+trap 'rm -f "$FIELDS"' EXIT
+
+python3 - "$CHECKLIST" <<'PYEOF' > "$FIELDS" || fail "checklist parse failed"
 import sys, re
 text = open(sys.argv[1]).read()
 stack = []  # (indent, section-name)
@@ -48,9 +55,9 @@ for raw in text.splitlines():
     sys.stderr.write(f"unparsable checklist line: {raw.strip()}\n")
     sys.exit(1)
 PYEOF
-[ -s "$$.fields" ] || fail "checklist has no parsable entries"
+[ -s "$FIELDS" ] || fail "checklist has no parsable entries"
 
-ALLOWED="$(awk -F'\t' '$1=="allow"{print $2}' "$$.fields")"
+ALLOWED="$(awk -F'\t' '$1=="allow"{print $2}' "$FIELDS")"
 # scan target = tracked files minus the checklist itself minus allow-listed paths
 SCAN_TARGETS="$(git ls-files | grep -vxF "$CHECKLIST" | grep -vxF -f <(printf '%s\n' "$ALLOWED" | grep -v '^$') 2>/dev/null)"
 [ -n "$SCAN_TARGETS" ] || SCAN_TARGETS="/dev/null"
@@ -81,8 +88,8 @@ while IFS=$'\t' read -r key value; do
       git ls-files | grep -qxF "$value" || { echo "VIOLATION require: missing $value" >&2; viol=1; }
       ;;
   esac
-done < "$$.fields"
-rm -f "$$.fields"
+done < "$FIELDS"
+# temp file cleaned up via EXIT trap
 
 [ "$viol" -eq 0 ] || fail "violations above — fix before pushing"
 
