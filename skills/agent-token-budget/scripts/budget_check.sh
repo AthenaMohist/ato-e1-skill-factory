@@ -50,15 +50,22 @@ if [ "$TOTAL_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily ceiling exceeded (
 # Checking only the last line lets an oversized run earlier in the day escape.
 for LOGF in "$METER_LOG" "$METER_LOG.1"; do
   [ -f "$LOGF" ] || continue
-  grep "^$TODAY" "$LOGF" | while IFS=' ' read -r _d rid lin lout _rest; do
-    case "${lin}${lout}" in *[!0-9]*|'')
-      echo "BREACH: run $rid meter line corrupt (input='$lin' output='$lout' must be numeric) — an unreadable meter line hides real usage" >&2
-      continue;;
-    esac
-    if [ "$lin" -gt "$IN_CAP" ]; then echo "BREACH: run $rid input $lin > per-run ceiling $IN_CAP" >&2; fi
-    if [ "$lout" -gt "$OUT_CAP" ]; then echo "BREACH: run $rid output $lout > per-run ceiling $OUT_CAP" >&2; fi
-  done
-  if cat "$LOGF" 2>/dev/null | grep "^$TODAY" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
+  # single awk pass over today's lines: per-run ceilings compared in awk
+  # (bash arithmetic errors on values >= 2^63, so an overflowed meter line
+  # could escape per-run enforcement or wedge the check with stderr noise).
+  # Doing the numeric-validity check here too means no while-read loop, and
+  # awk keeps reading its own stdin — no stdin-swallowing side effects.
+  grep "^$TODAY" "$LOGF" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
+    {
+      rid=$2; lin=$3; lout=$4
+      if (lin !~ /^[0-9]+$/ || lout !~ /^[0-9]+$/)
+        printf "BREACH: run %s meter line corrupt (input=%s output=%s must be numeric) — an unreadable meter line hides real usage\n", rid, lin, lout > "/dev/stderr"
+      else {
+        if (lin+0 > ic+0) printf "BREACH: run %s input %s > per-run ceiling %s\n", rid, lin, ic > "/dev/stderr"
+        if (lout+0 > oc+0) printf "BREACH: run %s output %s > per-run ceiling %s\n", rid, lout, oc > "/dev/stderr"
+      }
+    }'
+  if grep "^$TODAY" "$LOGF" 2>/dev/null | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
       ($3 !~ /^[0-9]+$/ || $4 !~ /^[0-9]+$/) { bad=1 }
       ($3+0) > (ic+0) || ($4+0) > (oc+0) { found=1 }
       END { exit((bad||found)?0:1) }'; then
