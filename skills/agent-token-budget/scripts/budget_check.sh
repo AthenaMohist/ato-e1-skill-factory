@@ -28,50 +28,47 @@ done
 case "$ON_BREACH" in halt-and-log|degrade|notify-only) ;; *) echo "ERROR: on_breach must be halt-and-log|degrade|notify-only" >&2; ERR=1;; esac
 [ "$ERR" = 1 ] && exit 1
 
-# Sum today's usage from the meter log (date computed portably via python3, sed fallback)
 TODAY=$(python3 -c "import datetime;print(datetime.date.today())" 2>/dev/null \
   || date +%Y-%m-%d)
+
 # Rotation (log_usage.sh auto-rotate) moves earlier lines into <log>.1 — today's
 # usage can span both files. Ignoring the archive silently undercounts the day.
+BREACH=0
 IN_USED=0; OUT_USED=0
 for LOGF in "$METER_LOG" "$METER_LOG.1"; do
-  if [ -f "$LOGF" ]; then
-    IN_USED=$((IN_USED + $(grep "^$TODAY" "$LOGF" | awk '{s+=$3} END{print s+0}')))
-    OUT_USED=$((OUT_USED + $(grep "^$TODAY" "$LOGF" | awk '{s+=$4} END{print s+0}')))
-  fi
+  [ -f "$LOGF" ] || continue
+  # One awk pass per file: validate every line numeric, enforce per-run ceilings,
+  # and sum the day — all in awk, compared numerically. Doing the SUM in bash
+  # instead lets a single corrupted (>=2^63) meter line poison the total: awk
+  # prints such a sum in e-notation (e.g. 1.84467e+19) and bash's $(( ))
+  # coerces that to 0, so the broken line DEFEATS the daily ceiling check
+  # instead of tripping it. Same reason per-run checks run here and not in a
+  # bash while-read loop (bash arithmetic errors on >=2^63 values).
+  STATS=$(grep "^$TODAY" "$LOGF" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
+    {
+      rid=$2; lin=$3; lout=$4
+      if (lin !~ /^[0-9]+$/ || lout !~ /^[0-9]+$/) {
+        printf "BREACH: run %s meter line corrupt (input=%s output=%s must be numeric) — an unreadable meter line hides real usage\n", rid, lin, lout > "/dev/stderr"
+        bad++
+      } else {
+        tin += lin; tout += lout
+        if (lin+0 > ic+0) printf "BREACH: run %s input %s > per-run ceiling %s\n", rid, lin, ic > "/dev/stderr"
+        if (lout+0 > oc+0) printf "BREACH: run %s output %s > per-run ceiling %s\n", rid, lout, oc > "/dev/stderr"
+        if (lin+0 > ic+0 || lout+0 > oc+0) bad++
+      }
+    }
+    END { printf "%d %d %d\n", tin+0, tout+0, bad+0 }')
+  IN_USED=$((IN_USED + $(echo "$STATS" | awk "{print \$1}")))
+  OUT_USED=$((OUT_USED + $(echo "$STATS" | awk "{print \$2}")))
+  [ "$(echo "$STATS" | awk "{print \$3}")" -gt 0 ] && BREACH=1
 done
 
 echo "date=$TODAY in+out=$((IN_USED + OUT_USED))/$DAY_CAP (per-run cap: in=$IN_CAP out=$OUT_CAP) on_breach=$ON_BREACH"
-BREACH=0
 TOTAL_USED=$((IN_USED + OUT_USED))
 if [ "$TOTAL_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily ceiling exceeded (in+out=$TOTAL_USED > $DAY_CAP)" >&2; BREACH=1; fi
 
-# Per-run enforcement: check EVERY meter line from today against per-run ceilings.
-# Checking only the last line lets an oversized run earlier in the day escape.
-for LOGF in "$METER_LOG" "$METER_LOG.1"; do
-  [ -f "$LOGF" ] || continue
-  # single awk pass over today's lines: per-run ceilings compared in awk
-  # (bash arithmetic errors on values >= 2^63, so an overflowed meter line
-  # could escape per-run enforcement or wedge the check with stderr noise).
-  # Doing the numeric-validity check here too means no while-read loop, and
-  # awk keeps reading its own stdin — no stdin-swallowing side effects.
-  grep "^$TODAY" "$LOGF" | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
-    {
-      rid=$2; lin=$3; lout=$4
-      if (lin !~ /^[0-9]+$/ || lout !~ /^[0-9]+$/)
-        printf "BREACH: run %s meter line corrupt (input=%s output=%s must be numeric) — an unreadable meter line hides real usage\n", rid, lin, lout > "/dev/stderr"
-      else {
-        if (lin+0 > ic+0) printf "BREACH: run %s input %s > per-run ceiling %s\n", rid, lin, ic > "/dev/stderr"
-        if (lout+0 > oc+0) printf "BREACH: run %s output %s > per-run ceiling %s\n", rid, lout, oc > "/dev/stderr"
-      }
-    }'
-  if grep "^$TODAY" "$LOGF" 2>/dev/null | awk -v ic="$IN_CAP" -v oc="$OUT_CAP" '
-      ($3 !~ /^[0-9]+$/ || $4 !~ /^[0-9]+$/) { bad=1 }
-      ($3+0) > (ic+0) || ($4+0) > (oc+0) { found=1 }
-      END { exit((bad||found)?0:1) }'; then
-    BREACH=1
-  fi
-done
+# Checking only the last meter line lets an oversized run earlier in the day
+# escape — the per-file awk pass above checks EVERY line from today.
 
 if [ "$BREACH" = 1 ] && [ "$ON_BREACH" = "halt-and-log" ]; then
   exit 1

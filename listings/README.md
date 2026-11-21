@@ -10,6 +10,21 @@
 
 ## Market research log
 
+### 2026-11-21
+- **agent-token-budget v1.9.2 — daily-sum robustness against corrupted meter lines**:
+  probing found that a meter line with token fields >= 2^63 (log corruption /
+  hand edit) poisons the daily total: awk sums the line in floating point and
+  prints e-notation (e.g. 1.84467e+19), and bash $(( )) coerces that string to
+  0 — so a broken meter line DEFEATS the daily ceiling check (1.8e19 printed as
+  "in+out=150") instead of tripping it. v1.9.1 had already fixed the per-run
+  comparison; the DAILY SUM had the same class of bug one layer up. Fix: one
+  awk pass per file validates numeric fields, compares per-run caps, and sums
+  the day, all numerically; bash never sums meter values. (Also: `sin` is a
+  reserved word in mawk — sum vars renamed.) Regression: 7 scenarios green —
+  overflow line trips per-run + rc1, daily-breach rc1, clean rc0, corrupt-line
+  rc1, archive-span sums correctly rc0, mixed corrupt+breach+clean rc1, no-log
+  rc0.
+
 ### 2026-11-11
 - **git-backup-discipline v1.1.0 — example output + explicit requirements**:
   market research today (Agent37 / Agensi / KissMySkills 2026 guides) names two
