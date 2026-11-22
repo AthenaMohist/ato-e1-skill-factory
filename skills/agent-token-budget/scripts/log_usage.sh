@@ -36,5 +36,24 @@ if [ "$(wc -l < "$LOG")" -ge "$MAX" ]; then
     mv -f "$LOG" "$LOG.1"
   fi
   : > "$LOG"
+  # The merged archive grows without bound: every rotation appends the whole
+  # current log to <log>.1, so after months the archive holds ALL history and
+  # budget_check.sh greps the full file again — rotation stops capping meter
+  # IO. Old-period lines are never counted anyway (they are filtered by
+  # TODAY), so pruning outside the keep window is zero-semantics-loss.
+  prune_archive() {
+    local PLOG="$1"
+    [ -f "$PLOG.1" ] || return 0
+    local KEEP="${TOKENS_ARCHIVE_KEEP_DAYS:-7}"
+    case "$KEEP" in ''|*[!0-9]|0) echo "ERROR: TOKENS_ARCHIVE_KEEP_DAYS must be numeric >=1 (got '$KEEP')" >&2; return 1;; esac
+    local CUTOFF
+    CUTOFF=$(python3 -c "import datetime;print(datetime.date.today()-datetime.timedelta(days=$KEEP-1))" 2>/dev/null \
+      || date -d "$((KEEP-1)) days ago" +%Y-%m-%d 2>/dev/null \
+      || date -v-"$((KEEP-1))"d +%Y-%m-%d 2>/dev/null) || { echo "WARN: cannot compute cutoff — archive left unpruned" >&2; return 0; }
+    local TMPF
+    TMPF=$(mktemp "${PLOG}.1.prune.XXXXXX") || return 0
+    awk -v cut="$CUTOFF" 'substr($1,1,10) >= cut' "$PLOG.1" > "$TMPF" && mv -f "$TMPF" "$PLOG.1" || { rm -f "$TMPF"; echo "WARN: archive prune failed — archive left unpruned" >&2; return 0; }
+  }
+  prune_archive "$LOG" || exit 1
   echo "rotated: $((MAX))+ lines -> $LOG.1 (merged, fresh $LOG started)" >&2
 fi

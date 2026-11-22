@@ -15,8 +15,8 @@ npx skills add AthenaMohist/ato-e1-skill-factory
 
 - `SKILL.md` — the discipline: a budget contract (`TOKENS.budget.yml`), four rules (measure first, input discipline, outputs-not-narration, every loop has a cap), and explicit breach behavior.
 - `scripts/budget_check.sh` — validates the contract, sums today's usage from the meter log, exits 1 (fail-closed) on breach when `on_breach: halt-and-log`. GNU/BSD portable.
-- `scripts/log_usage.sh` — appends one meter line per run: date, run id, input, output, verdict. Rotation is automatic: at `TOKENS_ROTATE_LINES` (default 5000) the log is merged into the archive `<log>.1` and a fresh log starts — the meter never grows unbounded even if `rotate_meter.sh` is never invoked manually, and repeated rotations never destroy earlier meter data.
-- `scripts/rotate_meter.sh` — rotates the meter log past a line threshold into `TOKENS.log.1` (default 5000 lines), so the meter itself never becomes an unbounded cost.
+- `scripts/log_usage.sh` — appends one meter line per run: date, run id, input, output, verdict. Rotation is automatic: at `TOKENS_ROTATE_LINES` (default 5000) the log is merged into the archive `<log>.1` and a fresh log starts — the meter never grows unbounded even if `rotate_meter.sh` is never invoked manually, and repeated rotations never destroy earlier meter data. The archive itself is pruned to a `TOKENS_ARCHIVE_KEEP_DAYS` (default 7) window on every rotation, so the merged archive cannot silently grow back into the full-history grep problem rotation exists to prevent.
+- `scripts/rotate_meter.sh` — rotates the meter log past a line threshold into `TOKENS.log.1` (default 5000 lines), so the meter itself never becomes an unbounded cost. Uses the same archive keep-window as `log_usage.sh`; an invalid keep-window value exits 1 (fail-closed).
 - `examples/TOKENS.budget.yml.example` — starting contract.
 
 ## Quick start
