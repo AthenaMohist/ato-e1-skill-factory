@@ -53,6 +53,12 @@ while still printing "backup verified" (gap type 6 was only caught by the
 passive audit). The skill's own `BACKUP.*` artifacts are excluded; a
 `BACKUP_ALLOW_DIRTY=1` override pushes with a WARN and always records the gap.
 
+v1.2.1: portability fix — `backup.sh` updated `last_verified` with GNU-only
+`sed -i`; on BSD/macOS sed `-i` needs a suffix argument, so the update failed
+after a successful push and `last_verified` stayed stale (the next audit then
+falsely reported STALE-VERIFIED on a freshly backed-up repo). Now portable
+write-then-rename, same atomicity.
+
 v1.0.6: optional `BACKUP.audit-ignore` at the audit ROOT to exclude non-backup-target repos from NO-MANIFEST noise (relative paths, `#` comments).
 v1.0.5: `audit.sh --json` machine-readable output for cron/CI consumers; fix quoted `last_verified` scalars false-flagging UNPARSEABLE-VERIFIED; JSON detail escaping.
 

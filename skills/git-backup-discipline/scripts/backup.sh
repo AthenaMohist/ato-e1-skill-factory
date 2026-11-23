@@ -36,5 +36,11 @@ if [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
   echo "BACKUP FAILED: remote SHA != HEAD (exit code lied — this is why we verify)" >&2; exit 1
 fi
 echo "$LOG_LINE OK sha=$HEAD_SHA" >> BACKUP.log
-sed -i "s/^last_verified: .*/last_verified: $TS/" BACKUP.manifest.yml
+# Portable manifest update: `sed -i` (no suffix) is GNU-only — on BSD/macOS sed
+# `-i` expects a backup-suffix argument and the command errors (or treats the
+# pattern as the suffix), leaving last_verified stale so the next audit falsely
+# reports STALE-VERIFIED. Write-then-rename is portable and atomic.
+TS_ESC=$(printf '%s' "$TS" | sed 's/[&|]/\\&/g')
+sed "s/^last_verified: .*/last_verified: $TS_ESC/" BACKUP.manifest.yml > BACKUP.manifest.yml.tmp \
+  && mv -f BACKUP.manifest.yml.tmp BACKUP.manifest.yml
 echo "backup verified: remote $BRANCH @ ${HEAD_SHA:0:7}"
