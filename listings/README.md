@@ -10,6 +10,20 @@
 
 ## Market research log
 
+### 2026-11-23
+- **git-backup-discipline v1.2.1 — portability: GNU-only `sed -i` broke
+  `last_verified` on macOS/BSD**: after a successful push, `backup.sh` updated
+  the manifest with `sed -i "s/.../"` — a GNU extension. BSD/macOS sed requires
+  a suffix argument on `-i`, so the command failed there and `last_verified`
+  stayed stale: a freshly, successfully backed-up repo would be falsely
+  reported STALE-VERIFIED by the next audit (the tool criticizing a backup that
+  actually happened). Fix: portable write-then-rename (same atomicity, no
+  platform dependency). Regression green: manifest updated post-push, no
+  `.tmp` residue, audit flags only real gaps.
+- SkillsMP: API and listing pages blocked by Cloudflare challenge (curl 403 +
+  headless browser stuck on "Just a moment..."); check skipped today, snapshot
+  status unknown for 11-22/11-23.
+
 ### 2026-11-21
 - **agent-token-budget v1.9.2 — daily-sum robustness against corrupted meter lines**:
   probing found that a meter line with token fields >= 2^63 (log corruption /
