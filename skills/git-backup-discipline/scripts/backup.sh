@@ -27,11 +27,13 @@ elif [ -n "$DIRTY" ]; then
 fi
 
 if ! git push origin "$BRANCH" 2>>BACKUP.log; then
+  echo "$TS PUSH-FAILED sha=$HEAD_SHA (push rejected — remote state unknown)" >> BACKUP.gaps
   echo "$LOG_LINE FAIL (push rejected) sha=$HEAD_SHA" >> BACKUP.log
   echo "BACKUP FAILED: push did not succeed" >&2; exit 1
 fi
 REMOTE_SHA=$(git ls-remote origin -h "refs/heads/$BRANCH" | cut -f1)
 if [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
+  echo "$TS SHA-MISMATCH sha=$HEAD_SHA remote=${REMOTE_SHA:-none} (remote does not match HEAD)" >> BACKUP.gaps
   echo "$LOG_LINE FAIL (sha mismatch head=$HEAD_SHA remote=${REMOTE_SHA:-none})" >> BACKUP.log
   echo "BACKUP FAILED: remote SHA != HEAD (exit code lied — this is why we verify)" >&2; exit 1
 fi
