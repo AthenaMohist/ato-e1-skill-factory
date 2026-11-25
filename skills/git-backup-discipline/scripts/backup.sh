@@ -12,6 +12,15 @@ BRANCH=$(git rev-parse --abbrev-ref HEAD)
 TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 HEAD_SHA=$(git rev-parse HEAD)
 LOG_LINE="$TS push"
+# Gap type 8 (detached HEAD) at the primary entrypoint: abbrev-ref returns the
+# literal "HEAD", so a push would target no real branch and fail with a
+# misleading PUSH-FAILED. Fail-closed with the specific gap instead.
+if [ "$BRANCH" = "HEAD" ]; then
+  echo "$TS DETACHED-HEAD sha=$HEAD_SHA (not on any branch — commits are only reachable from reflog and will be garbage-collected)" >> BACKUP.gaps
+  echo "$LOG_LINE BLOCKED (detached HEAD) sha=$HEAD_SHA" >> BACKUP.log
+  echo "BACKUP BLOCKED: detached HEAD — checkout/attach a branch before backing up." >&2
+  exit 1
+fi
 
 # Gap type 6 (uncommitted worktree changes) at the primary entrypoint, not only in audit.
 # The discipline's own artifacts (BACKUP.manifest.yml/log/gaps) are untracked by design and excluded.
