@@ -7,3 +7,8 @@ daily:
   ceiling: 200000          # all runs combined
 on_breach: halt-and-log    # halt-and-log | degrade | notify-only
 meter_log: TOKENS.log      # append-only usage log, one line per run
+
+# Optional cost model (v1.11): report and cap the day's spend in dollars.
+# usd_per_1m_input: 3.0    # both prices required when cost reporting is on
+# usd_per_1m_output: 15.0
+# cost_ceiling_usd: 1.00

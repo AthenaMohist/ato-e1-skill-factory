@@ -26,6 +26,25 @@ for v in "$IN_CAP" "$OUT_CAP" "$DAY_CAP"; do
   case "$v" in ''|*[!0-9]*) echo "ERROR: missing or non-numeric ceiling in $BUDGET_FILE" >&2; ERR=1;; esac
 done
 case "$ON_BREACH" in halt-and-log|degrade|notify-only) ;; *) echo "ERROR: on_breach must be halt-and-log|degrade|notify-only" >&2; ERR=1;; esac
+
+# Optional cost model (v1.11): per-million-USD prices + a daily cost ceiling.
+# Token counts alone don't answer the question stakeholders ask ("what did
+# yesterday cost?"); a ceiling in dollars is the number a budget owner can
+# actually reason about. Fields are optional — absent means no cost reporting.
+P_IN=$(get usd_per_1m_input)
+P_OUT=$(get usd_per_1m_output)
+COST_CAP=$(get cost_ceiling_usd)
+if [ -n "$P_IN" ] || [ -n "$P_OUT" ] || [ -n "$COST_CAP" ]; then
+  for v in "$P_IN" "$P_OUT"; do
+    case "$v" in ''|*[!0-9.]*) echo "ERROR: usd_per_1m_* must be numeric (got '$v')" >&2; ERR=1;; esac
+  done
+  case "$COST_CAP" in ''|*[!0-9.]*) echo "ERROR: cost_ceiling_usd must be numeric (got '$COST_CAP')" >&2; ERR=1;; esac
+  # Both prices required when cost reporting is on: one-sided pricing silently
+  # misvalues output-heavy workflows (output is usually the expensive side).
+  if [ -z "$P_IN" ] || [ -z "$P_OUT" ]; then
+    echo "ERROR: cost reporting needs both usd_per_1m_input and usd_per_1m_output" >&2; ERR=1
+  fi
+fi
 [ "$ERR" = 1 ] && exit 1
 
 TODAY=$(python3 -c "import datetime;print(datetime.date.today())" 2>/dev/null \
@@ -66,6 +85,21 @@ done
 echo "date=$TODAY in+out=$((IN_USED + OUT_USED))/$DAY_CAP (per-run cap: in=$IN_CAP out=$OUT_CAP) on_breach=$ON_BREACH"
 TOTAL_USED=$((IN_USED + OUT_USED))
 if [ "$TOTAL_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily ceiling exceeded (in+out=$TOTAL_USED > $DAY_CAP)" >&2; BREACH=1; fi
+
+# Cost model (v1.11): report today's estimated cost; enforce cost_ceiling_usd.
+# awk does the float math (bash arithmetic is integer-only); printf %.2f keeps
+# the report human-readable. Grep for BREACH in stderr, not exit code alone —
+# the caller may run with notify-only and still want the number surfaced.
+if [ -n "$COST_CAP" ]; then
+  COST=$(awk -v ti="$IN_USED" -v to="$OUT_USED" -v pi="$P_IN" -v po="$P_OUT" \
+    'BEGIN { printf "%.2f", (ti/1000000)*pi + (to/1000000)*po }')
+  OVER=$(awk -v c="$COST" -v cap="$COST_CAP" 'BEGIN { print (c+0 > cap+0) ? 1 : 0 }')
+  echo "cost_usd=$COST/$COST_CAP (in=${IN_USED}x\$$P_IN/M + out=${OUT_USED}x\$$P_OUT/M)"
+  if [ "$OVER" = 1 ]; then
+    echo "BREACH: daily cost ceiling exceeded (cost_usd=$COST > $COST_CAP)" >&2
+    BREACH=1
+  fi
+fi
 
 # Checking only the last meter line lets an oversized run earlier in the day
 # escape — the per-file awk pass above checks EVERY line from today.
