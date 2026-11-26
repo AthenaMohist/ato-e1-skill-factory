@@ -10,6 +10,20 @@
 
 ## Market research log
 
+### 2026-11-26
+- **agent-token-budget v1.11.0 — cost model: token ceilings answered "how much
+  did we use" but never "what did it cost"** — the number a budget owner
+  actually reasons about, and the #1 selling point of paid token-saver tools.
+  New optional config: `usd_per_1m_input`, `usd_per_1m_output`,
+  `cost_ceiling_usd` — budget_check.sh now reports `cost_usd=<today>/<cap>`
+  (awk float math) and enforces the dollar ceiling like any token ceiling.
+  Config errors on missing/non-numeric prices when cost fields are present
+  (one-sided pricing misvalues output-heavy workflows). Regression 5/5: no
+  cost fields -> unchanged output rc0; under cap -> cost_usd=0.01 rc0; over
+  cap -> BREACH + cost breach rc1; one-sided pricing -> config error rc1;
+  non-numeric price -> config error rc1.
+- SkillsMP recheck: API still 403 (Cloudflare), day 4.
+
 ### 2026-11-23
 - **git-backup-discipline v1.2.1 — portability: GNU-only `sed -i` broke
   `last_verified` on macOS/BSD**: after a successful push, `backup.sh` updated
