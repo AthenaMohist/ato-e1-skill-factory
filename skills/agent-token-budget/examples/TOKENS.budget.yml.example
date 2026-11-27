@@ -12,3 +12,7 @@ meter_log: TOKENS.log      # append-only usage log, one line per run
 # usd_per_1m_input: 3.0    # both prices required when cost reporting is on
 # usd_per_1m_output: 15.0
 # cost_ceiling_usd: 1.00
+
+# Optional pace projection (v1.12): extrapolate day-end in+out usage from
+# hours elapsed; WARN (stderr) before the daily ceiling is actually breached.
+# projected_inout: on

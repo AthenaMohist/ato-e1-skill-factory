@@ -86,6 +86,35 @@ echo "date=$TODAY in+out=$((IN_USED + OUT_USED))/$DAY_CAP (per-run cap: in=$IN_C
 TOTAL_USED=$((IN_USED + OUT_USED))
 if [ "$TOTAL_USED" -gt "$DAY_CAP" ]; then echo "BREACH: daily ceiling exceeded (in+out=$TOTAL_USED > $DAY_CAP)" >&2; BREACH=1; fi
 
+# Pace projection (v1.12): extrapolate day-end usage from hours elapsed today.
+# Reporting only "used so far" lets a runaway loop be technically under the
+# ceiling at 9am and blow it by noon; a linear projection flags the breach
+# BEFORE it happens, which is the only form of warning an unattended agent
+# can act on (auto-rotate/drain the queue before halt). Projection uses wall
+# clock: fractional-hour elapsed since local midnight, floored at 1 minute so
+# an early-morning check never divides by zero. OFF when projected_inout is
+# absent (opt-in, keeps default output byte-identical for existing users).
+PROJ=$(get projected_inout)
+if [ -n "$PROJ" ]; then
+  case "$PROJ" in
+    on|auto) ;;
+    *) echo "ERROR: projected_inout must be on or auto (got '$PROJ')" >&2; ERR=1;;
+  esac
+fi
+[ "$ERR" = 1 ] && exit 1
+if [ -n "$PROJ" ]; then
+  POUT_TOK=$((IN_USED + OUT_USED))
+  HRS=$(python3 -c "import datetime as d; n=d.datetime.now(); m=d.datetime.combine(n.date(),d.time.min); print(max((n-m).total_seconds()/3600, 1/60))" 2>/dev/null \
+    || awk -v t="$(date +%H:%M)" 'BEGIN{split(t,a,":"); h=a[1]+a[2]/60; if(h<1/60)h=1/60; print h}')
+  PROJ_TOK=$(awk -v u="$POUT_TOK" -v h="$HRS" 'BEGIN{printf "%d", u/h*24}')
+  PIN=$(awk -v u="$POUT_TOK" -v h="$HRS" -v cap="$DAY_CAP" 'BEGIN{p=u/h*24; print (p>cap)?"WARN":"ok"}')
+  PPCT=$(awk -v u="$POUT_TOK" -v h="$HRS" -v cap="$DAY_CAP" 'BEGIN{printf "%d", (u/h*24/cap)*100}')
+  echo "projection: hours_elapsed=$HRS projected_inout=$PROJ_TOK/$DAY_CAP $PIN"
+  if [ "$PIN" = "WARN" ]; then
+    echo "WARN: projected day-end usage exceeds ceiling (pace $(awk -v p="$PPCT" 'BEGIN{printf "%d", p}')% of daily cap) — drain/auto-rotate before halt-and-log fires" >&2
+  fi
+fi
+
 # Cost model (v1.11): report today's estimated cost; enforce cost_ceiling_usd.
 # awk does the float math (bash arithmetic is integer-only); printf %.2f keeps
 # the report human-readable. Grep for BREACH in stderr, not exit code alone —
