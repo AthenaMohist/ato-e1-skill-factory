@@ -142,6 +142,22 @@ while IFS= read -r -d '' repo; do
   elif [ "$REMOTE_SHA" != "$HEAD_SHA" ]; then
     gap UNPUSHED "$repo" "head=${HEAD_SHA:0:7} remote=${REMOTE_SHA:0:7}"
   fi
+  # UNPUSHED-BRANCH: commits on local branches other than the current one that
+  # the remote does not have. The HEAD check above only proves the *current*
+  # branch is backed; work merged onto a side branch (fix/feature) is invisible
+  # to it and silently unbacked until a checkout makes it current.
+  while IFS= read -r sb; do
+    [ "$sb" = "$BRANCH" ] && continue
+    [ "$sb" = "HEAD" ] && continue
+    LOCAL_SHA=$(git -C "$repo" rev-parse "refs/heads/$sb" 2>/dev/null || echo "")
+    [ -n "$LOCAL_SHA" ] || continue
+    RS_SHA=$(git -C "$repo" ls-remote "$VERIFY_URL" -h "refs/heads/$sb" 2>/dev/null | cut -f1)
+    if [ -z "$RS_SHA" ]; then
+      gap UNPUSHED-BRANCH "$repo" "branch=$sb (not on remote)"
+    elif [ "$RS_SHA" != "$LOCAL_SHA" ]; then
+      gap UNPUSHED-BRANCH "$repo" "branch=$sb local=${LOCAL_SHA:0:7} remote=${RS_SHA:0:7}"
+    fi
+  done < <(git -C "$repo" for-each-ref --format='%(refname:short)' refs/heads)
   if [ -n "$M_REMOTE" ] && [ -n "$A_REMOTE" ] && [ "$M_REMOTE" != "$A_REMOTE" ]; then
     gap REMOTE-MISMATCH "$repo" "manifest=$M_REMOTE actual=$A_REMOTE"
   fi

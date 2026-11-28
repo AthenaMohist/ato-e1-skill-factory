@@ -53,6 +53,12 @@ while still printing "backup verified" (gap type 6 was only caught by the
 passive audit). The skill's own `BACKUP.*` artifacts are excluded; a
 `BACKUP_ALLOW_DIRTY=1` override pushes with a WARN and always records the gap.
 
+v1.3.0: new gap type UNPUSHED-BRANCH — the audit previously verified only the
+*current* branch against the remote; commits on local side branches (fix/,
+feature/) were invisible and silently unbacked until a checkout made them
+current. Every local branch is now compared to the remote's same-named branch
+(missing or divergent SHA both flagged).
+
 v1.2.1: portability fix — `backup.sh` updated `last_verified` with GNU-only
 `sed -i`; on BSD/macOS sed `-i` needs a suffix argument, so the update failed
 after a successful push and `last_verified` stayed stale (the next audit then
